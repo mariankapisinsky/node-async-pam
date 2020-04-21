@@ -1,15 +1,42 @@
+"use strict";
+
 const pam = require('bindings')('async_pam');
 
-pam.authenticate('webapp', 'marian', item => {
+var WebSocketServer = require('ws').Server;
 
-  if (item.retval === -1) {
-    console.log(item.prompt);
+var WebSocketsServerPort = 1234;
 
-    setTimeout( () => {
-      passwd = 'passwd';
-      pam.registerResponse(item, passwd);
-    }, 500);    
-  } else {
-    console.log(item.retval);
-  };
+var wss = new WebSocketServer({ port: WebSocketsServerPort });
+
+console.log('Runnning on port ' + WebSocketsServerPort + '...');
+
+wss.on('connection', function(ws) {
+
+  console.log('Connected');
+
+  var test;
+
+  ws.on('message', function(message) {
+
+    if ( message === "marian" ) {
+
+      pam.authenticate('webapp', message, item => {
+        test = item;
+        if (item.retval === -1) {
+          ws.send(JSON.stringify({"message": item.prompt}));
+        } else {
+          ws.send(JSON.stringify({"message": item.retval}));
+        }
+      });
+
+    } else {
+
+      pam.registerResponse(test, message);
+    }
+  });
 });
+
+
+
+
+

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>PAM Authentication</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+
+		"use strict";
+
+		var ws = new WebSocket('ws://localhost:1234');
+
+		ws.onopen = function (e) {
+			$("#promptLabel").text(['Username:']);
+			$("#promptForm").show();
+		};
+
+		ws.onmessage = function(e) {
+			var response = JSON.parse(e.data);
+
+			if (response.message === 0) {
+				$("#promptForm").hide();
+				$("#status").text('Authenticated');
+			}
+			else if (typeof response.message === 'string') {
+				$("#promptLabel").text(response.message);
+			}
+			else {
+				$("#promptLabel").text(['Username:']);
+				$("#status").text('An error occured, please try again');
+			}
+			$('#prompt').val('');
+		}
+
+		function sendUserInput() {
+			var userInput = $('#prompt').val();
+			ws.send(userInput);
+			$("#status").text('');
+		}
+
+    </script>
+  </head>
+  <body>
+	<form hidden id="promptForm" onsubmit="sendUserInput(); return false;">
+		<label id="promptLabel" for="prompt"></label>
+    	<input id="prompt" type="text" />
+	<button type="button" onclick="sendUserInput();">Next</button>
+    </form>
+    <p id="status"></p>
+  </body>
+</html>
