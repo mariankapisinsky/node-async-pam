@@ -1,0 +1,19 @@
+{
+  "name": "node-async-pam",
+  "version": "0.0.1",
+  "description": "Asynchronous PAM Authentication for Node.js",
+  "author": "Marian Kapisinsky",
+  "license": "MIT",
+  "main": "main.js",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "*"
+  },
+  "engines": {
+    "node": ">= 10.6.0"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean"
+  }
+}
