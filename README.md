@@ -1,6 +1,5 @@
 # node-async-pam
-Asynchronous PAM Authentication for Node.js - WIP
+Asynchronous PAM Authentication for Node.js
 
 TO DO:
-  - Connect it with web via ws (websocket)
-  - Handle multithreading
+  - Handle multithreading (in JS or C)
