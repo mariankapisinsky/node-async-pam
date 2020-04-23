@@ -10,33 +10,36 @@ var wss = new WebSocketServer({ port: WebSocketsServerPort });
 
 console.log('Runnning on port ' + WebSocketsServerPort + '...');
 
+let users = new Map;
+
 wss.on('connection', function(ws) {
 
   console.log('Connected');
 
-  var test;
-
   ws.on('message', function(message) {
 
-    if ( message === "marian" ) {
+    var cred = message.split(':'); 
 
-      pam.authenticate('webapp', message, item => {
-        test = item;
-        if (item.retval === -1) {
-          ws.send(JSON.stringify({"message": item.prompt}));
+    if ( !users.has(cred[0]) ) {
+      
+      pam.authenticate('webapp', cred[0], data => {
+
+        users.set(data.user, data);
+        
+        if (data.retval === -1) {
+          ws.send(JSON.stringify({"message": data.prompt}));
         } else {
-          ws.send(JSON.stringify({"message": item.retval}));
+          ws.send(JSON.stringify({"message": data.retval}));
+          console.log(data.retval);
+          users.delete(data.user);
         }
+
+        console.log(users.entries());
       });
 
     } else {
 
-      pam.registerResponse(test, message);
+      pam.registerResponse(users.get(cred[0]), cred[1]);
     }
   });
 });
-
-
-
-
-
