@@ -1,5 +1,4 @@
 #%PAM-1.0
-auth    required  pam_sss.so
-account required  pam_sss.so
-auth    required  pam_unix.so
-#auth   required  pam_oath.so usersfile=/etc/users.oath window=30 digits=6
+auth    required   pam_sss.so
+account required   pam_sss.so
+auth	  required   pam_google_authenticator.so
