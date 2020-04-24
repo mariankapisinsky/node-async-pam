@@ -7,4 +7,7 @@ Dependencies:
   - PAM header files - dnf install pam-devel (on Fedora)
 
 TO DO:
-  - Handle multithreading (in JS or C)
+  - error handling
+  - extend conv() function and replace while() if possible
+  - integrate it to a test web application
+  - session management in main.js
