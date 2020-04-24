@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include <signal.h>
 #include <assert.h>
 
-#include <uv.h>
 #include <node_api.h>
 
 #include <security/pam_appl.h>
@@ -11,16 +12,17 @@
 typedef struct {
   char *username;
   char *service;
-  uv_thread_t thread;
-  uv_mutex_t mutex;
-  napi_threadsafe_function tsfn;
   char *prompt;
   char *response;
   int retval;
+  pthread_t thread;
+  pthread_mutex_t mutex;
+  napi_threadsafe_function tsfn;
 } AddonData;
 
 napi_ref authDataConstructor;
-
+//dorobit terminate
+// dorobit + timeout
 int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr ) {
 
     AddonData *data = (AddonData *)appdata_ptr;
@@ -34,16 +36,16 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
     // Pass the prompt into JavaScript
     assert(napi_call_threadsafe_function(data->tsfn, data, napi_tsfn_blocking) == napi_ok);
 
-    //Wait for the response
+    //Wait for the response - najst lepsiu alternativu
     while(true) {
 
-      uv_mutex_lock(&(data->mutex));
+      pthread_mutex_lock(&(data->mutex));
       if(data->response == NULL ) {
-        uv_mutex_unlock(&(data->mutex));
+        pthread_mutex_unlock(&(data->mutex));
         continue;
       } 
       else {
-        uv_mutex_unlock(&(data->mutex));
+        pthread_mutex_unlock(&(data->mutex));
         break;
       }
     }
@@ -83,22 +85,30 @@ static void CallJs(napi_env env, napi_value js_cb, void* context, void* data) {
 }
 
 static void ThreadFinished(napi_env env, void* data, void* context) {
+
   (void) context;
-  AddonData* addonData = (AddonData*)data;  
-  assert(uv_thread_join(&(addonData->thread)) == 0);
+
+  AddonData* addonData = (AddonData*)data;
+
+  assert(pthread_join(addonData->thread, NULL) == 0);
+  
+  pthread_mutex_destroy(&(addonData->mutex));
+
   addonData->tsfn = NULL;
-  uv_mutex_destroy(&(addonData->mutex));
+
+  free(addonData->service);
+  free(addonData->username);
   free(addonData);
 }
 
 //The authentication thread
-static void AuthThread(void* data) {
+void *AuthThread(void* data) {
   AddonData* addonData = (AddonData*) data;
 
   pam_handle_t *pamh = NULL;
   int retval = 0;
 
-  struct pam_conv conv = { &nodepamConv, (void *) addonData};
+  struct pam_conv conv = { &nodepamConv, (void *) addonData };
 
   retval = pam_start(addonData->service, addonData->username, &conv, &pamh);
   
@@ -123,7 +133,7 @@ static napi_value Authenticate(napi_env env, napi_callback_info info) {
 
   AddonData* addonData = memset(malloc(sizeof(*addonData)), 0, sizeof(*addonData));
 
-  assert(uv_mutex_init(&(addonData->mutex)) == 0);
+  assert(pthread_mutex_init(&(addonData->mutex), NULL) == 0);
 
   buf = malloc( sizeof(char) * 256 );
   memset(buf, 0, 256);
@@ -149,14 +159,14 @@ static napi_value Authenticate(napi_env env, napi_callback_info info) {
 
   assert(napi_create_threadsafe_function(env, argv[2], NULL, tsfn_name, 0, 1, addonData, ThreadFinished, NULL, CallJs, &addonData->tsfn) == napi_ok);
   
-  assert(uv_thread_create(&(addonData->thread), AuthThread, addonData) == 0);
+  assert(pthread_create(&(addonData->thread), NULL, AuthThread, (void *) addonData) == 0);
 
   free(buf);
 
   return NULL;
 }
 
-static bool is_thread_item (napi_env env, napi_ref constructor_ref, napi_value value) {
+static bool is_thread_item(napi_env env, napi_ref constructor_ref, napi_value value) {
 
   bool validate;
   napi_value constructor;
@@ -187,12 +197,33 @@ static napi_value RegisterResponse(napi_env env, napi_callback_info info) {
   
   assert(napi_get_value_string_utf8(env, argv[1], buf, 256, &result) == napi_ok);
 
-  uv_mutex_lock(&(addonData->mutex));
+  pthread_mutex_lock(&(addonData->mutex));
   addonData->response = memset(malloc(result), 0, result);
   strcpy(addonData->response, buf);
-  uv_mutex_unlock(&(addonData->mutex));
+  pthread_mutex_unlock(&(addonData->mutex));
 
   free(buf);
+
+  return NULL;
+}
+
+static napi_value Terminate(napi_env env, napi_callback_info info) {
+
+  size_t argc = 1;
+  napi_value argv[1];
+  AddonData *addonData;
+
+  assert(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
+
+  assert(argc == 1 && "Exactly one arguments was received");
+
+  assert(is_thread_item(env, authDataConstructor, argv[0]));
+
+  assert(napi_unwrap(env, argv[0], (void**)&addonData) == napi_ok);
+
+  kill(addonData->thread, SIGTERM);
+
+  //assert(napi_release_threadsafe_function(addonData->tsfn, napi_tsfn_release) == napi_ok);
 
   return NULL;
 }
@@ -258,7 +289,8 @@ NAPI_MODULE_INIT() {
 
   napi_property_descriptor export_properties[] = {
     { "authenticate", NULL, Authenticate, NULL, NULL, NULL, napi_default, 0 },
-    { "registerResponse", NULL, RegisterResponse, NULL, NULL, NULL, napi_default, 0 }
+    { "registerResponse", NULL, RegisterResponse, NULL, NULL, NULL, napi_default, 0 },
+    { "terminate", NULL, Terminate, NULL, NULL, NULL, napi_default, 0 }
   };
 
   assert(napi_define_properties(env, exports, sizeof(export_properties) / sizeof(export_properties[0]), export_properties) == napi_ok);

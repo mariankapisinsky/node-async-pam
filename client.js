@@ -2,7 +2,7 @@
 
 var ws = new WebSocket('ws://localhost:1234');
 
-var user;
+var tm;
 
 ws.onopen = function (e) {
 	$("#promptLabel").text(['Username:']);
@@ -18,22 +18,22 @@ ws.onmessage = function(e) {
 	}
 	else if (typeof response.message === 'string') {
 		$("#promptLabel").text(response.message);
-	} else if (response.message === 10) {
-		$("#promptLabel").text(['Username:']);
-		$("#status").text('You are not yet registered to the service');
-		user = undefined;
-	}
-	else {
+
+		tm = setTimeout( () => {
+			ws.close();
+			$("#promptForm").hide();
+			$("#status").text('Connection timeout');
+		}, 60000);
+	} else {
 		$("#promptLabel").text(['Username:']);
 		$("#status").text('An error occured, please try again');
-		user = undefined;
 	}
 	$('#prompt').val('');
 }
 
 function sendUserInput() {
-	if (!user) user = $('#prompt').val();
-	var userInput = user + ':' + $('#prompt').val();
+	clearTimeout(tm);
+	var userInput = $('#prompt').val();
 	ws.send(userInput);
 	$("#status").text('');
 }

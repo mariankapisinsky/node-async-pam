@@ -22,7 +22,7 @@ const argv = yargs
 var port = argv.port;
 var service = argv.service;
 
-var wss = new WebSocketServer({ port: port });
+const wss = new WebSocketServer({ port: port });
 
 console.log('Runnning on port ' + port + '...');
 
@@ -33,11 +33,9 @@ wss.on('connection', function(ws) {
 
   ws.on('message', function(message) {
 
-    var cred = message.split(':');
-
     if ( !ctx ) {
       
-      pam.authenticate(service, cred[0], data => {
+      pam.authenticate(service, message, data => {
 
         ctx = data;
         
@@ -52,7 +50,17 @@ wss.on('connection', function(ws) {
 
     } else {
 
-      pam.registerResponse(ctx, cred[1]);
+      pam.registerResponse(ctx, message);
+    }
+  });
+
+  ws.on('close', function() {
+    if (ctx) {
+      pam.terminate(ctx);
+      ctx = undefined;
+      console.log('term');
     }
   });
 });
+
+
