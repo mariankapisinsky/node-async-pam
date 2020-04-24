@@ -1,4 +1,4 @@
-"use strict";
+"use strict"; // + session management ak sa da
 
 const pam = require('bindings')('async_pam');
 const yargs = require('yargs');
@@ -26,36 +26,33 @@ var wss = new WebSocketServer({ port: port });
 
 console.log('Runnning on port ' + port + '...');
 
-let users = new Map;
-
 wss.on('connection', function(ws) {
 
   console.log('Connected');
+  var ctx;
 
   ws.on('message', function(message) {
 
-    var cred = message.split(':'); 
+    var cred = message.split(':');
 
-    if ( !users.has(cred[0]) ) {
+    if ( !ctx ) {
       
       pam.authenticate(service, cred[0], data => {
 
-        users.set(data.user, data);
+        ctx = data;
         
         if (data.retval === -1) {
           ws.send(JSON.stringify({"message": data.prompt}));
         } else {
           ws.send(JSON.stringify({"message": data.retval}));
+          ctx = undefined;
           console.log(data.retval);
-          users.delete(data.user);
         }
-
-        console.log(users.entries());
       });
 
     } else {
 
-      pam.registerResponse(users.get(cred[0]), cred[1]);
+      pam.registerResponse(ctx, cred[1]);
     }
   });
 });
