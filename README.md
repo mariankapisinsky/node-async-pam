@@ -1,7 +1,9 @@
 # node-async-pam
 Asynchronous PAM Authentication for Node.js
 
-Install: npm install
+Install:
+  npm install
+  npm run build
 
 Dependencies:
   - PAM header files - dnf install pam-devel (on Fedora)
