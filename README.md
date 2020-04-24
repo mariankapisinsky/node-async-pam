@@ -11,5 +11,5 @@ Dependencies:
 TO DO:
   - error handling
   - extend conv() function and replace while() if possible
-  - integrate it to a test web application
+  - integrate it to a test web application (functional, but weird behavior on login page)
   - session management in main.js
