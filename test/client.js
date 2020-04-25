@@ -2,7 +2,7 @@
 
 var ws = new WebSocket('ws://localhost:1234');
 
-var user, status, tm;
+var user, tm;
 
 ws.onopen = function (e) {
 	$("#promptLabel").text(['Username:']);
