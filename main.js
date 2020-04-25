@@ -1,6 +1,6 @@
-"use strict"; // + session management ak sa da
+"use strict"; // + session management
 
-const pam = require('bindings')('async_pam');
+const pam = require('bindings')('auth_pam');
 const yargs = require('yargs');
 var WebSocketServer = require('ws').Server;
 
@@ -22,6 +22,8 @@ const argv = yargs
 var port = argv.port;
 var service = argv.service;
 
+const NODE_PAM_JS_CONV = 50;
+
 const wss = new WebSocketServer({ port: port });
 
 console.log('Runnning on port ' + port + '...');
@@ -39,12 +41,11 @@ wss.on('connection', function(ws) {
 
         ctx = data;
         
-        if (data.retval === -1) {
+        if (data.retval === NODE_PAM_JS_CONV) {
           ws.send(JSON.stringify({"message": data.prompt}));
         } else {
           ws.send(JSON.stringify({"message": data.retval}));
           ctx = undefined;
-          console.log(data.retval);
         }
       });
 

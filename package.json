@@ -1,7 +1,7 @@
 {
-  "name": "node-async-pam",
-  "version": "0.0.3",
-  "description": "Asynchronous PAM Authentication for Node.js",
+  "name": "node-auth-pam",
+  "version": "0.0.4",
+  "description": "PAM Authentication for Node.js",
   "author": "Marian Kapisinsky",
   "license": "MIT",
   "main": "main.js",

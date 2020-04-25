@@ -1,8 +1,8 @@
 {
   'targets': [
     {
-      'target_name': 'async_pam',
-      'sources': [ 'src/main.c' ],
+      'target_name': 'auth_pam',
+      'sources': [ 'src/auth-pam.c' ],
       'libraries': ['-lpam']
     }
   ]
