@@ -13,9 +13,11 @@ ws.onmessage = function(e) {
 	var response = JSON.parse(e.data);
 
 	if (response.message === 0) {
+		ws.close();
+		var cookie = 'ok:' + user;
 		$("#promptForm").hide();
-		status = 'Authenticated';
-		sendAuthInfo(user, status);
+		$("#status").text('Authenticated');
+		sendAuthInfo(user, cookie);
 	}
 	else if (typeof response.message === 'string') {
 		$("#promptLabel").text(response.message);
@@ -23,14 +25,12 @@ ws.onmessage = function(e) {
 		tm = setTimeout( () => {
 			ws.close();
 			$("#promptForm").hide();
-			status = 'Connection timeout';
-			sendAuthInfo(user, status);
+			$("#status").text('Connection timeout');
 			user = undefined;
 		}, 60000);
 	} else {
 		$("#promptLabel").text(['Username:']);
-		status = 'An error occured, please try again';
-		sendAuthInfo(user, status);
+		$("#status").text('An error occured, please try again');
 		user = undefined;
 	}
 	$('#prompt').val('');
@@ -38,19 +38,22 @@ ws.onmessage = function(e) {
 
 function sendUserInput() {
 	clearTimeout(tm);
+	$("#status").text('');
 	if(!user) user = $('#prompt').val();
 	var userInput = $('#prompt').val();
-	ws.send(userInput);
-	$("#status").text('');
+	if (!userInput) {
+		$("#status").text('Input has to non empty!');
+	} else {
+		ws.send(userInput);
+	}
 }
 
-function sendAuthInfo(user, status) {
+function sendAuthInfo(user, cookie) {
 
- 	$.ajax({
-        	type: 'POST',
-        	url: 'http://localhost/app/login',
-        	data: { user: user, status: status },
-		success: success
-        });
+	$.ajax({
+		type: 'POST',
+		url: 'http://localhost/app/login',
+		data: { user: user, cookie: cookie }
+	});
 };
 

@@ -18,7 +18,6 @@
 use strict;
 use warnings FATAL => 'all';
 use CGI ();
-use CGI::Carp 'fatalsToBrowser';
 
 my $LOGIN = '/login';
 my $LOGOUT = '/logout';
@@ -37,48 +36,47 @@ print "Content-Type: text/html; charset=UTF-8\n";
 print "Pragma: no-cache\n";
 
 my $title = "Application";
-my $body = "This is a test application; public view, not much to see.";
+my $authScript = '';
+my $body = "<p>This is a test application; public view, not much to see.<p>";
 if (defined $user) {
 	$title .= " authenticated ($name)";
-	$body = "Test application; logged in as user $name."
-		 . " There is  much more content for authenticated users." x 10;
+	$body = "<p>Test application; logged in as user $name."
+		 . " There is much more content for authenticated users.</p>";
 }
 
 sub logout {
 	print "Set-Cookie: $AUTH_COOKIE=xx; path=$ENV{SCRIPT_NAME}\n";
 	print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
 	$title = "Logged out";
-	$body = 'Successfully logged out. You will be redirected to the '
-		. qq!<a href="$ENV{SCRIPT_NAME}">home page</a>!;
+	$body = '<p>Successfully logged out. You will be redirected to the '
+		. qq!<a href="$ENV{SCRIPT_NAME}">home page</a></p>!;
 }
 sub login {
+	$authScript = '<script src="../client.js"></script>';
 	if (defined $user) {
 		print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
 		$title = "Already logged in";
-		$body = "You are already logged in as user $name.\n";
+		$body = "<p>You are already logged in as user $name.</p>";
 		return;
 	}
+
 	$title = "Log in to application";
 	my $login = $q->param('user');
-	my $status = $q->param('status');
+	my $jscookie = $q->param('cookie');
 
-	if (defined $login and $status eq 'Authenticated') {
-		print "Set-Cookie: $AUTH_COOKIE=ok:$login; path=$ENV{SCRIPT_NAME}\n";
-		print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
-		$title = 'Logged in as ' . CGI::escapeHTML($login);
-		$body = 'You will be redirected to the '
-			. qq!<a href="$ENV{SCRIPT_NAME}">home page</a>!;
-		return;
+	if (defined $login) {
+		print "Set-Cookie: $AUTH_COOKIE=$jscookie; path=$ENV{SCRIPT_NAME}\n";
+		return;	
 	}
+
 	no warnings 'uninitialized';
 	$body = <<"EOS";
-	$status
-	<script src="../client.js"></script>
 	<form hidden id="promptForm" onsubmit="sendUserInput(); return false;">
 		<label id="promptLabel" for="prompt"></label>
-	    	<input id="prompt" type="text" />
+		<input id="prompt" type="text" />
 		<button type="button" onclick="sendUserInput();">Next</button>
 	</form>
+	<p id="status"></p>
 EOS
 }
 
@@ -104,10 +102,11 @@ print <<"EOS";
   <head>
     <title>$title</title>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    $authScript
   </head>
   <body>
     <h1>$title</h1>
-    <p>$body</p>
+    $body
     <hr/>
     <p>@nav</p>
     <!--
