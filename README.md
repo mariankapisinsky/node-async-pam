@@ -1,5 +1,5 @@
-# node-async-pam
-Asynchronous PAM Authentication for Node.js
+# node-auth-pam
+PAM Authentication for Node.js
 
 Install:
   1. npm install
