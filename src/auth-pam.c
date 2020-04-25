@@ -41,7 +41,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
 
     ctx->prompt = memset(malloc((strlen(msg[i]->msg) + 1)), 0, (strlen(msg[i]->msg) + 1));
 
-    strcpy(ctx->prompt, msg[0]->msg);
+    strcpy(ctx->prompt, msg[i]->msg);
     ctx->retval = NODE_PAM_JS_CONV;
     ctx->response = NULL;
 
