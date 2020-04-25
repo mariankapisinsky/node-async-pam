@@ -52,7 +52,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     const struct pam_message *msgp = NULL;
     struct pam_response *resp = NULL;
 
-    msg.msg_style = PAM_PROMPT_ECHO_OFF;
+    msg.msg_style = PAM_PROMPT_ECHO_ON;
     msg.msg = "Reversed login: ";
     msgp = &msg;
 
