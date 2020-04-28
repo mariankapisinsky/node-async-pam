@@ -61,7 +61,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     if ( retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL ) {
 
         fprintf(stderr, "Didn't get reversed login\n");
-        exit(1);
+        return PAM_SYSTEM_ERR;
     }
     else {
 
@@ -72,6 +72,6 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
         return PAM_SUCCESS;
     }
     else {
-        return PAM_PERM_DENIED;
+        return PAM_AUTH_ERR;
     }
 }
