@@ -9,4 +9,5 @@ Dependencies:
   - PAM header files - dnf install pam-devel (on Fedora)
 
 TO DO:
+  - finish the nodepamConv() function (msg types)
   - replace while() if possible
