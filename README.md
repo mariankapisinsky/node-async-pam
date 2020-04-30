@@ -10,4 +10,3 @@ Dependencies:
 
 TO DO:
   - replace while() if possible
-  - session management in main.js
