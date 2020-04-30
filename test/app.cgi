@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 #  Copyright 2014 Jan Pazdziora
-#  Copyright 2020 Marian Kapisinsky ???
+#  Copyright 2020 Marian Kapisinsky
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ use CGI ();
 
 my $LOGIN = '/login';
 my $LOGOUT = '/logout';
-my $AUTH_COOKIE = 'the-test-cookie';
+my $AUTH_COOKIE = 'SID';
 
 my $q = new CGI;
 my $cookie = $q->cookie($AUTH_COOKIE);
@@ -64,8 +64,9 @@ sub login {
 	my $login = $q->param('user');
 	my $jscookie = $q->param('cookie');
 
-	if (defined $login) {
-		print "Set-Cookie: $AUTH_COOKIE=$jscookie; path=$ENV{SCRIPT_NAME}\n";
+	if (defined $login and defined $jscookie) {
+		print "Set-Cookie: $jscookie; path=$ENV{SCRIPT_NAME}\n";
+		print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
 		return;	
 	}
 

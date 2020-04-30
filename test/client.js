@@ -1,5 +1,7 @@
 "use strict";
 
+const PAM_SUCCESS = 0;
+
 var ws = new WebSocket('ws://localhost:1234');
 
 var user, tm;
@@ -10,14 +12,13 @@ ws.onopen = function (e) {
 };
 
 ws.onmessage = function(e) {
-	var response = JSON.parse(e.data);
+	var response = JSON.parse(e.data);console.log(response);
 
-	if (response.message === 0) {
+	if (response.message === PAM_SUCCESS) {
 		ws.close();
-		var cookie = 'ok:' + user;
 		$("#promptForm").hide();
 		$("#status").text('Authenticated');
-		sendAuthInfo(user, cookie);
+		sendAuthInfo(user, response.cookie);
 	}
 	else if (typeof response.message === 'string') {
 		$("#promptLabel").text(response.message);
@@ -30,7 +31,7 @@ ws.onmessage = function(e) {
 		}, 60000);
 	} else {
 		$("#promptLabel").text(['Username:']);
-		$("#status").text('An error occured, please try again');
+		$("#status").text('Wrong username or password, please try again');
 		user = undefined;
 	}
 	$('#prompt').val('');
