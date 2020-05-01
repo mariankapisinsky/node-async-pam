@@ -2,12 +2,12 @@
 PAM Authentication for Node.js
 
 Install:
-  1. npm install
+  1. npm install (should be enough)
   2. npm run build
 
 Dependencies:
   - PAM header files - dnf install pam-devel (on Fedora)
 
 TO DO:
-  - finish the nodepamConv() function (msg types)
+  - write comments
   - replace while() if possible
