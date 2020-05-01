@@ -61,6 +61,8 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         response[i].resp = strdup(ctx->response);
         response[i].resp_retcode = 0;
 
+	free(ctx->message);
+	free(ctx->response);
         break;
       case PAM_ERROR_MSG:
       case PAM_TEXT_INFO:
@@ -70,13 +72,11 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         // Pass the message into JavaScript
         assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 
+	free(ctx->message);
         break;
       default:
         return PAM_CONV_ERR;
     }
-
-    free(ctx->message);
-    free(ctx->response);
   }
 
   *resp = response;

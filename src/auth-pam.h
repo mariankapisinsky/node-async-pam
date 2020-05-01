@@ -2,6 +2,8 @@
 
 #include <node_api.h>
 
+#define BUFFERSIZE 256
+
 #define NODE_PAM_JS_CONV 50
 #define NODE_PAM_ERR 51
 

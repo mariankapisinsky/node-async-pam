@@ -64,7 +64,7 @@ static napi_value Authenticate(napi_env env, napi_callback_info info) {
 
   assert(pthread_mutex_init(&(ctx->mutex), NULL) == 0);
 
-  buf = memset(malloc(256), 0, (256));
+  buf = memset(malloc(BUFFERSIZE), 0, BUFFERSIZE);
   
   assert(napi_get_cb_info(env, info, &argc, argv, NULL, NULL) == napi_ok);
 
@@ -76,7 +76,7 @@ static napi_value Authenticate(napi_env env, napi_callback_info info) {
   assert(ctx->service);
   strcpy(ctx->service, buf);
 
-  memset(buf, 0, 256);
+  memset(buf, 0, BUFFERSIZE);
 
   assert(napi_get_value_string_utf8(env, argv[1], buf, sizeof(buf), &stringSize) == napi_ok);
 
@@ -122,9 +122,9 @@ static napi_value RegisterResponse(napi_env env, napi_callback_info info) {
 
   assert(napi_unwrap(env, argv[0], (void**)&ctx) == napi_ok);
 
-  buf = memset(malloc(256), 0, (256));
+  buf = memset(malloc(BUFFERSIZE), 0, BUFFERSIZE);
   
-  assert(napi_get_value_string_utf8(env, argv[1], buf, 256, &responseSize) == napi_ok);
+  assert(napi_get_value_string_utf8(env, argv[1], buf, BUFFERSIZE, &responseSize) == napi_ok);
 
   nodepamSetResponse(ctx, buf, responseSize);
 
@@ -184,7 +184,7 @@ static napi_value GetMsg(napi_env env, napi_callback_info info) {
   return property;
 }
 
-static napi_value GetmsgStyle(napi_env env, napi_callback_info info) {
+static napi_value GetMsgStyle(napi_env env, napi_callback_info info) {
 
   napi_value jsthis, property;
   nodepamCtx* ctx;
@@ -193,7 +193,7 @@ static napi_value GetmsgStyle(napi_env env, napi_callback_info info) {
   assert(isnodepamCtx(env, nodepamCtxConstructor, jsthis));
 
   assert(napi_ok == napi_unwrap(env, jsthis, (void**)&ctx));
-  assert(napi_ok == napi_create_int64(env, ctx->msgStyle, &property));
+  assert(napi_ok == napi_create_int32(env, ctx->msgStyle, &property));
 
   return property;
 }
@@ -207,7 +207,7 @@ static napi_value GetRetval(napi_env env, napi_callback_info info) {
   assert(isnodepamCtx(env, nodepamCtxConstructor, jsthis));
 
   assert(napi_ok == napi_unwrap(env, jsthis, (void**)&ctx));
-  assert(napi_ok == napi_create_int64(env, ctx->retval, &property));
+  assert(napi_ok == napi_create_int32(env, ctx->retval, &property));
 
   return property;
 }
@@ -219,7 +219,7 @@ NAPI_MODULE_INIT() {
   napi_property_descriptor thread_item_properties[] = {
     { "user", 0, 0, GetUser, 0, 0, napi_writable, 0 },
     { "msg", 0, 0, GetMsg, 0, 0, napi_writable, 0 },
-    { "msgStyle", 0, 0, GetmsgStyle, 0, 0, napi_enumerable, 0 },
+    { "msgStyle", 0, 0, GetMsgStyle, 0, 0, napi_enumerable, 0 },
     { "retval", 0, 0, GetRetval, 0, 0, napi_enumerable, 0 }
   };
 
