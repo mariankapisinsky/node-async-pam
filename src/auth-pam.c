@@ -9,6 +9,17 @@
 
 #include "auth-pam.h"
 
+void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
+
+  ctx->msgStyle = msg_style;
+
+  ctx->message = memset(malloc((strlen(msg))), 0, (strlen(msg)));
+  ctx->message = strdup(msg);
+       
+  ctx->retval = NODE_PAM_JS_CONV;
+  ctx->response = NULL;
+}
+
 int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr ) {
 
   if ( !msg || !resp || !appdata_ptr ) return PAM_CONV_ERR;
@@ -16,40 +27,55 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
   if ( num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG ) return PAM_CONV_ERR;
 
   struct pam_response *response = NULL;
-  response = memset(malloc(sizeof(*response)), 0, sizeof(*response));
+  response = memset(malloc(num_msg * sizeof(struct pam_response)), 0, num_msg * sizeof(struct pam_response));
   if ( !response ) return PAM_CONV_ERR;
 
   nodepamCtx *ctx = (nodepamCtx *)appdata_ptr;
 
   for ( int i = 0; i < num_msg; i++ ) {
 
-    ctx->prompt = memset(malloc((strlen(msg[i]->msg) + 1)), 0, (strlen(msg[i]->msg) + 1));
+    switch (msg[i]->msg_style) {
 
-    strcpy(ctx->prompt, msg[i]->msg);
-    ctx->retval = NODE_PAM_JS_CONV;
-    ctx->response = NULL;
+      case PAM_PROMPT_ECHO_OFF:
+      case PAM_PROMPT_ECHO_ON:
 
-    // Pass the prompt into JavaScript
-    assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
+        prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
 
-    //Wait for the response - najst lepsiu alternativu
-    while(true) {
+        // Pass the message into JavaScript
+        assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 
-      pthread_mutex_lock(&(ctx->mutex));
-      if(ctx->response == NULL ) {
-        pthread_mutex_unlock(&(ctx->mutex));
-        continue;
-      } 
-      else {
-        pthread_mutex_unlock(&(ctx->mutex));
+        //Wait for the response - najst lepsiu alternativu
+        while(true) {
+
+          pthread_mutex_lock(&(ctx->mutex));
+          if(ctx->response == NULL ) {
+            pthread_mutex_unlock(&(ctx->mutex));
+            continue;
+          } 
+          else {
+            pthread_mutex_unlock(&(ctx->mutex));
+            break;
+          }
+        }
+
+        response[i].resp = strdup(ctx->response);
+        response[i].resp_retcode = 0;
+
         break;
-      }
+      case PAM_ERROR_MSG:
+      case PAM_TEXT_INFO:
+        
+        prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
+
+        // Pass the message into JavaScript
+        assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
+
+        break;
+      default:
+        return PAM_CONV_ERR;
     }
 
-    response[i].resp = strdup(ctx->response);
-    response[i].resp_retcode = 0;
-
-    free(ctx->prompt);
+    free(ctx->message);
     free(ctx->response);
   }
 
@@ -94,7 +120,7 @@ void nodepamCleanup(nodepamCtx *ctx) {
 
   if (ctx->retval == NODE_PAM_ERR) {
     kill(ctx->thread, SIGTERM);
-    free(ctx->prompt);
+    free(ctx->message);
   } else {
     assert(pthread_join(ctx->thread, NULL) == 0);
   }

@@ -73,7 +73,7 @@ wss.on('connection', (ws) => {
             if (line.includes(message)) {
               let arr = (line.split('::'));
               if (arr[0] === message) {
-                ws.send(JSON.stringify({"message": 0, "cookie": arr[1]}));
+                ws.send(JSON.stringify({"msg": 0, "cookie": arr[1]}));
                 break;
               }             
             }
@@ -83,14 +83,14 @@ wss.on('connection', (ws) => {
           pam.authenticate(service, message, data => {
             
             if (data.retval === NODE_PAM_JS_CONV) {
-              ws.send(JSON.stringify({"message": data.prompt}));
+              ws.send(JSON.stringify({"msg": data.msg, "msgStyle": data.msgStyle}));
               ctx = data;
             } else if (data.retval === PAM_SUCCESS) {
               var cookie = setCookie(cookieName, data.user);
-              ws.send(JSON.stringify({"message": data.retval, "cookie": cookie}));
+              ws.send(JSON.stringify({"msg": data.retval, "cookie": cookie}));
               ctx = undefined;
             } else {
-              ws.send(JSON.stringify({"message": data.retval}));
+              ws.send(JSON.stringify({"msg": data.retval}));
               ctx = undefined;
             }
           });

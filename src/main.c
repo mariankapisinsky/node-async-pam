@@ -170,7 +170,7 @@ static napi_value GetUser(napi_env env, napi_callback_info info) {
   return property;
 }
 
-static napi_value GetPrompt(napi_env env, napi_callback_info info) {
+static napi_value GetMsg(napi_env env, napi_callback_info info) {
 
   napi_value jsthis, property;
   nodepamCtx* ctx;
@@ -179,7 +179,21 @@ static napi_value GetPrompt(napi_env env, napi_callback_info info) {
   assert(isnodepamCtx(env, nodepamCtxConstructor, jsthis));
 
   assert(napi_ok == napi_unwrap(env, jsthis, (void**)&ctx));
-  assert(napi_ok == napi_create_string_utf8(env, ctx->prompt, strlen(ctx->prompt), &property));
+  assert(napi_ok == napi_create_string_utf8(env, ctx->message, strlen(ctx->message), &property));
+
+  return property;
+}
+
+static napi_value GetmsgStyle(napi_env env, napi_callback_info info) {
+
+  napi_value jsthis, property;
+  nodepamCtx* ctx;
+
+  assert(napi_ok == napi_get_cb_info(env, info, 0, 0, &jsthis, NULL));
+  assert(isnodepamCtx(env, nodepamCtxConstructor, jsthis));
+
+  assert(napi_ok == napi_unwrap(env, jsthis, (void**)&ctx));
+  assert(napi_ok == napi_create_int64(env, ctx->msgStyle, &property));
 
   return property;
 }
@@ -204,11 +218,12 @@ NAPI_MODULE_INIT() {
 
   napi_property_descriptor thread_item_properties[] = {
     { "user", 0, 0, GetUser, 0, 0, napi_writable, 0 },
-    { "prompt", 0, 0, GetPrompt, 0, 0, napi_writable, 0 },
+    { "msg", 0, 0, GetMsg, 0, 0, napi_writable, 0 },
+    { "msgStyle", 0, 0, GetmsgStyle, 0, 0, napi_enumerable, 0 },
     { "retval", 0, 0, GetRetval, 0, 0, napi_enumerable, 0 }
   };
 
-  assert(napi_define_class(env, "AuthData",  NAPI_AUTO_LENGTH, AuthDataConstructor, NULL, 3, thread_item_properties, &authDataClass) == napi_ok);
+  assert(napi_define_class(env, "AuthData",  NAPI_AUTO_LENGTH, AuthDataConstructor, NULL, 4, thread_item_properties, &authDataClass) == napi_ok);
   assert(napi_create_reference(env, authDataClass, 1, &nodepamCtxConstructor) == napi_ok);
 
   napi_property_descriptor export_properties[] = {

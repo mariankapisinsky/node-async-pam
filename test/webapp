@@ -1,0 +1,5 @@
+#%PAM-1.0
+auth    required   pam_sss.so
+auth    required   pam_reversed_login.so
+auth	required   pam_google_authenticator.so
+account required   pam_sss.so

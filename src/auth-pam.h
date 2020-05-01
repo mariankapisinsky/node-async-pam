@@ -6,9 +6,10 @@
 #define NODE_PAM_ERR 51
 
 typedef struct {
-  char *username;
   char *service;
-  char *prompt;
+  char *username;
+  char *message;
+  int msgStyle;
   char *response;
   int retval;
   pthread_t thread;
