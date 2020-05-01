@@ -52,10 +52,11 @@ ws.onmessage = function(e) {
 				break;
 		}
 	} else {
-		$("#promptLabel").text(['Username:']);
-		$("#status").text('Wrong username or password, please try again');
 		err = true;
 		user = undefined;
+		$("#status").text('Wrong username or password, please try again');
+		$('#prompt').prop('type', 'text');
+		$("#promptLabel").text('Username:');
 	}
 	$('#prompt').val('');
 }
