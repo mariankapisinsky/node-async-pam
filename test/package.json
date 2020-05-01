@@ -1,0 +1,21 @@
+{
+  "name": "node-auth-pam",
+  "version": "1.0.1",
+  "description": "PAM Authentication for Node.js",
+  "author": "Marian Kapisinsky",
+  "license": "MIT",
+  "main": "main.js",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "*",
+    "ws": "^7.2.3",
+    "yargs": "^15.3.1"
+  },
+  "engines": {
+    "node": ">= 10.6.0"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean"
+  }
+}
