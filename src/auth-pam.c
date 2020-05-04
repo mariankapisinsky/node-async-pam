@@ -7,6 +7,8 @@
 
 #include <security/pam_appl.h>
 
+#include <node_api.h>
+
 #include "auth-pam.h"
 
 void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
@@ -18,6 +20,10 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
        
   ctx->retval = NODE_PAM_JS_CONV;
   ctx->response = NULL;
+}
+
+void passToJS(nodepamCtx *ctx) {
+  assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 }
 
 int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr ) {
@@ -42,7 +48,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
 
         // Pass the message into JavaScript
-        assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
+        passToJS(ctx);
 
         //Wait for the response - najst lepsiu alternativu
         while(true) {
@@ -61,8 +67,8 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         response[i].resp = strdup(ctx->response);
         response[i].resp_retcode = 0;
 
-	free(ctx->message);
-	free(ctx->response);
+        free(ctx->message);
+        free(ctx->response);
         break;
       case PAM_ERROR_MSG:
       case PAM_TEXT_INFO:
@@ -72,7 +78,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         // Pass the message into JavaScript
         assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 
-	free(ctx->message);
+        free(ctx->message);
         break;
       default:
         return PAM_CONV_ERR;

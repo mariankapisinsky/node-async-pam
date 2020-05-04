@@ -152,6 +152,13 @@ static napi_value Terminate(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+static napi_value CleanUp(napi_env env, napi_callback_info info) {
+
+  assert(napi_delete_reference(env, nodepamCtxConstructor) == napi_ok);
+
+  return NULL;
+}
+
 static napi_value AuthDataConstructor(napi_env env, napi_callback_info info) {
   return NULL;
 }
@@ -229,7 +236,8 @@ NAPI_MODULE_INIT() {
   napi_property_descriptor export_properties[] = {
     { "authenticate", NULL, Authenticate, NULL, NULL, NULL, napi_default, 0 },
     { "registerResponse", NULL, RegisterResponse, NULL, NULL, NULL, napi_default, 0 },
-    { "terminate", NULL, Terminate, NULL, NULL, NULL, napi_default, 0 }
+    { "terminate", NULL, Terminate, NULL, NULL, NULL, napi_default, 0 },
+    { "cleanUp", NULL, CleanUp, NULL, NULL, NULL, napi_default, 0 }
   };
 
   assert(napi_define_properties(env, exports, sizeof(export_properties) / sizeof(export_properties[0]), export_properties) == napi_ok);
