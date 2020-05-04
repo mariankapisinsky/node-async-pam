@@ -2,6 +2,7 @@
 
 const yargs = require('yargs');
 const fs = require('fs');
+const crypto = require('crypto');
 const WebSocketServer = require('ws').Server;
 const pam = require('bindings')('auth_pam');
 
@@ -58,62 +59,68 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
 
-    if (!ctx) {
+    if (message.match(/sid:.+/)) {
+
+      var sid = message.substring(3);
 
       fs.readFile(sessionFile, (err, data) => {
-        
+
         if (err) throw err;
 
-        if (data.toString().includes(message)) {
+        if (data.toString().includes(sid)) {
 
           const lines = data.toString().split('\n');
 
           for ( let line of lines ) {
 
-            if (line.includes(message)) {
-              let arr = (line.split('::'));
-              if (arr[0] === message) {
-                ws.send(JSON.stringify({"msg": 0, "cookie": arr[1]}));
-                break;
-              }             
+            if (line.includes(sid)) {
+              var cred = (line.split('::'));
+              ws.send(JSON.stringify({"user": cred[0], "cookie": cred[1]}));
+              break;             
             }
           }
-        } else {
-
-          pam.authenticate(service, message, data => {
-            
-            if (data.retval === NODE_PAM_JS_CONV) {
-              ws.send(JSON.stringify({"msg": data.msg, "msgStyle": data.msgStyle}));
-              ctx = data;
-            } else if (data.retval === PAM_SUCCESS) {
-              var cookie = setCookie(cookieName, data.user);
-              ws.send(JSON.stringify({"msg": data.retval, "cookie": cookie}));
-              ctx = undefined;
-            } else {
-              ws.send(JSON.stringify({"msg": data.retval}));
-              ctx = undefined;
-            }
-          });
         }
       });
     } else {
 
-      pam.registerResponse(ctx, message);
-    }
+      if (!ctx) {
+
+        pam.authenticate(service, message, data => {
+              
+          if (data.retval === NODE_PAM_JS_CONV) {
+            ws.send(JSON.stringify({"msg": data.msg, "msgStyle": data.msgStyle}));
+              ctx = data;
+          } else if (data.retval === PAM_SUCCESS) {
+              var cookie = generateCookie(cookieName, data.user);
+              ws.send(JSON.stringify({"msg": data.retval, "cookie": cookie}));
+              ctx = undefined;
+          } else {
+              ws.send(JSON.stringify({"msg": data.retval}));
+              ctx = undefined;
+          }
+        });
+      } else {
+
+        pam.registerResponse(ctx, message);
+      }
+    }  
   });
 
   ws.on('close', function() {
-    if (ctx) {
+
+    if (ctx)
       pam.terminate(ctx);    
-    }
+
   });
 });
 
-function setCookie(cookieName, user) {
+function generateCookie(cookieName, user) {
 
   var expiresDate = new Date(new Date().getTime() + 86400000).toUTCString();
 
-  var cookie = cookieName + 'ok:' + user + "; Expires=" + expiresDate;
+  var sid = crypto.randomBytes(16).toString('base64');
+
+  var cookie = cookieName + sid + "; Expires=" + expiresDate;
 
   fs.appendFile(sessionFile, user + '::' + cookie + '\n', err => {
     if (err) throw err;
@@ -157,6 +164,8 @@ process.on('SIGINT', () => {
   fs.unlink(sessionFile, (err) => {
     if (err) throw err;
   })
+  
+  pam.cleanUp();
 
   process.exit();
 });
