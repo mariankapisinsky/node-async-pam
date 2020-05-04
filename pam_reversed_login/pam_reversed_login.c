@@ -32,8 +32,19 @@ int authenticate( const char *login, const char *reversed_login ) {
     return AUTH_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
-	return PAM_SUCCESS;
+void setMessages(struct pam_message *msg) {
+
+    msg[0].msg_style = PAM_PROMPT_ECHO_OFF;
+    msg[0].msg = "Reversed login (off): ";
+
+    msg[1].msg_style = PAM_PROMPT_ECHO_ON;
+    msg[1].msg = "Reversed login (on): ";
+
+    msg[2].msg_style = PAM_ERROR_MSG;
+    msg[2].msg = "This is an error message test";
+
+    msg[3].msg_style = PAM_TEXT_INFO;
+    msg[3].msg = "This is a text info test";
 }
 
 PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
@@ -48,17 +59,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     const struct pam_message **msgp = NULL;
     struct pam_response *resp = NULL;
 
-    msg[0].msg_style = PAM_PROMPT_ECHO_OFF;
-    msg[0].msg = "Reversed login (off): ";
-
-    msg[1].msg_style = PAM_PROMPT_ECHO_ON;
-    msg[1].msg = "Reversed login (on): ";
-
-    msg[2].msg_style = PAM_ERROR_MSG;
-    msg[2].msg = "This is an error message test";
-
-    msg[3].msg_style = PAM_TEXT_INFO;
-    msg[3].msg = "This is a text info test";
+    setMessages(msg);
 
     msgp = malloc(4 * sizeof(struct pam_message));
 
@@ -91,4 +92,8 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
 
     free(msgp);
     return PAM_SUCCESS;
+}
+
+PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
+	return PAM_SUCCESS;
 }
