@@ -8,57 +8,64 @@ const msgStyle = {
 	PAM_TEXT_INFO: 4
 }
 
-var ws = new WebSocket('ws://localhost:1234');
+if ( document.cookie ) {
+	$("#promptForm").hide();
+	$("#status").text('Already authenticated');
+} else {
 
-var user, tm, err;
+	var ws = new WebSocket('ws://localhost:1234');
 
-ws.onopen = function (e) {
-	$("#promptLabel").text(['Username:']);
-	$("#promptForm").show();
-};
+	var user, tm, err;
 
-ws.onmessage = function(e) {
-	var message = JSON.parse(e.data);
-
-	if (message.msg === PAM_SUCCESS) {
-		ws.close();
-		$("#promptForm").hide();
-		$("#status").text('Authenticated');
-		sendAuthInfo(user, message.cookie);
-	}
-	else if (typeof message.msg === 'string') {
-		
-		switch (message.msgStyle) {
-			case msgStyle.PAM_PROMPT_ECHO_OFF:
-				$("#promptLabel").text(message.msg);
-				$('#prompt').prop('type', 'password');
-				startTimer();
-				break;
-			case msgStyle.PAM_PROMPT_ECHO_ON:
-				$("#promptLabel").text(message.msg);
-				$('#prompt').prop('type', 'text');
-				startTimer();
-				break;
-			case msgStyle.PAM_ERROR_MSG:
-			case msgStyle.PAM_TEXT_INFO:
-
-				if (message.msgStyle === msgStyle.PAM_ERROR_MSG) {
-					$("#messages").append('<p style="color:red">' + message.msg + '</p>');
-				} else {
-					$("#messages").append('<p>' + message.msg + '</p>');
-				}
-				break;
-			default:
-				break;
-		}
-	} else {
-		err = true;
-		user = undefined;
-		$("#status").text('Wrong username or password, please try again');
-		$('#prompt').prop('type', 'text');
+	ws.onopen = function (e) {
 		$("#promptLabel").text('Username:');
+		$("#promptForm").show();
+	};
+
+	ws.onmessage = function(e) {
+		var message = JSON.parse(e.data);
+
+		if (message.msg === PAM_SUCCESS) {
+			ws.close();
+			$("#promptForm").hide();
+			$("#status").text('Authenticated');
+			sendAuthInfo(user, message.cookie);
+		}
+		else if (typeof message.msg === 'string') {
+			
+			switch (message.msgStyle) {
+				case msgStyle.PAM_PROMPT_ECHO_OFF:
+					$("#promptLabel").text(message.msg);
+					$('#prompt').prop('type', 'password');
+					startTimer();
+					break;
+				case msgStyle.PAM_PROMPT_ECHO_ON:
+					$("#promptLabel").text(message.msg);
+					$('#prompt').prop('type', 'text');
+					startTimer();
+					break;
+				case msgStyle.PAM_ERROR_MSG:
+				case msgStyle.PAM_TEXT_INFO:
+					
+					if (message.msgStyle === msgStyle.PAM_ERROR_MSG) {
+						$("#messages").append('<p style="color:red">' + message.msg + '</p>');
+					} else {
+						$("#messages").append('<p>' + message.msg + '</p>');
+					}
+					break;
+				default:
+					break;
+			}
+		} else {
+			clearTimeout(tm);
+			err = true;
+			user = undefined;
+			$("#status").text('Wrong username or password, please try again');
+			$('#prompt').prop('type', 'text');
+			$("#promptLabel").text('Username:');
+		}
+		$('#prompt').val('');
 	}
-	$('#prompt').val('');
 }
 
 function startTimer() {
