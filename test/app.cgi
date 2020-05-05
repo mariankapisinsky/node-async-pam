@@ -53,7 +53,7 @@ sub logout {
 		. qq!<a href="$ENV{SCRIPT_NAME}">home page</a></p>!;
 }
 sub login {
-	$script = '<script src="../client.js"></script>';
+	$script = '<script src="../login.js"></script>';
 	$title = "Log in to application";
 	my $login = $q->param('user');
 	my $jscookie = $q->param('cookie');
