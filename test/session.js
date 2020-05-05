@@ -18,7 +18,7 @@ $( document ).ready(function() {
 		var user = message.user;
 		
 		if (user === '') {
-			ws.close();console.log(':)');
+			ws.close();
 		} else {
 			sendAuthInfo( user);
 			ws.close();
