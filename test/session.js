@@ -16,18 +16,24 @@ $( document ).ready(function() {
 		var message = JSON.parse(e.data);
 
 		var user = message.user;
-		var cookie = message.cookie;
-
-		sendAuthInfo(document.url, user, cookie);
-		console.log(user + cookie);
+		
+		if (user === '') {
+			ws.close();console.log(':)');
+		} else {
+			sendAuthInfo( user);
+			ws.close();
+		}
 	}
 });
 
-function sendAuthInfo(url, user, cookie) {
+function sendAuthInfo(user) {
 
 	$.ajax({
 		type: 'POST',
-		url: url,
-		data: { user: user, cookie: cookie }
+		url: window.location,
+		data: { user: user },
+		success: function(data) {
+			$("html").html(data);
+		}
 	});
-}
+};

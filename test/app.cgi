@@ -28,7 +28,7 @@ my $q = new CGI;
 my $cookie = $q->cookie($AUTH_COOKIE);
 my $user;
  
-if ($cookie) {
+if ($cookie) { 
 	$user = $q->param('user');
 }
 
@@ -38,7 +38,7 @@ print "Content-Type: text/html; charset=UTF-8\n";
 print "Pragma: no-cache\n";
 
 my $title = "Application";
-my $authScript = '<script src="../session.js"></script>';
+my $script = '<script src="../session.js"></script>';
 my $body = "<p>This is a test application; public view, not much to see.<p>";
 if (defined $user) {
 	$title .= " authenticated ($user)";
@@ -47,34 +47,25 @@ if (defined $user) {
 }
 
 sub logout {
-	print "Set-Cookie: $AUTH_COOKIE=; Expires=Thu, 01 Jan 1970 00:00:01 GMT;path=$ENV{SCRIPT_NAME}\n";
-	print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
+	$script = '<script src="../logout.js"></script>';
 	$title = "Logged out";
 	$body = '<p>Successfully logged out. You will be redirected to the '
 		. qq!<a href="$ENV{SCRIPT_NAME}">home page</a></p>!;
 }
 sub login {
-	if (defined $user) {
-		print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
-		$title = "Already logged in";
-		$body = "<p>You are already logged in as user $user.</p>";
-		return;
-	}
-	$authScript = '<script src="../client.js"></script>';
+	$script = '<script src="../client.js"></script>';
 	$title = "Log in to application";
 	my $login = $q->param('user');
 	my $jscookie = $q->param('cookie');
 
 	if (defined $login and defined $jscookie) {
-		print "Status: 302\n";
-		print "Location: $ENV{SCRIPT_NAME}\n";
 		print "Set-Cookie: $jscookie; path=$ENV{SCRIPT_NAME}\n";	
 		return;	
 	}
 
 	no warnings 'uninitialized';
 	$body = <<"EOS";
-	<form hidden id="promptForm" data-ajax="false" onsubmit="sendUserInput(); return false;">
+	<form hidden id="promptForm" onsubmit="sendUserInput(); return false;">
 		<label id="promptLabel" for="prompt"></label>
 		<input id="prompt" type="text" />
 		<button type="button" onclick="sendUserInput();">Next</button>
@@ -107,7 +98,7 @@ print <<"EOS";
   <head>
     <title>$title</title>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    $authScript
+    $script
   </head>
   <body>
     <h1>$title</h1>
