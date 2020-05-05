@@ -22,7 +22,7 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
   ctx->response = NULL;
 }
 
-void passToJS(nodepamCtx *ctx) {
+void sendMessage(nodepamCtx *ctx) {
   assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 }
 
@@ -48,7 +48,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
 
         // Pass the message into JavaScript
-        passToJS(ctx);
+        sendMessage(ctx);
 
         //Wait for the response - najst lepsiu alternativu
         while(true) {
