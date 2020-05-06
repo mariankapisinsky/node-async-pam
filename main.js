@@ -61,7 +61,7 @@ wss.on('connection', (ws) => {
 
     if (message.match(/sid:.+/)) {
 
-      var sid = message.substring(3);
+      var sid = message.substring(8);
 
       fs.readFile(sessionFile, (err, data) => {
 
@@ -85,7 +85,7 @@ wss.on('connection', (ws) => {
       });
     } else if (message.match(/logout:.+/)) {
 
-      var sid = message.substring(6);
+      var sid = message.substring(11);
 
       fs.readFile(sessionFile, (err, data) => {
 
@@ -146,7 +146,7 @@ function generateCookie(cookieName, user) {
 
   var cookie = cookieName + sid + '; Expires=' + expiresDate;
 
-  fs.appendFile(sessionFile, user + '::' + cookie + '\n', err => {
+  fs.appendFile(sessionFile, user + '::' + sid + '\n', err => {
     if (err) throw err;
   });
 
