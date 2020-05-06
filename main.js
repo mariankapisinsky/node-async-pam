@@ -7,6 +7,12 @@ const WebSocketServer = require('ws').Server;
 const pam = require('bindings')('auth_pam');
 
 const PAM_SUCCESS = 0;
+const msgStyle = {
+  PAM_PROMPT_ECHO_OFF: 1,
+  PAM_PROMPT_ECHO_ON: 2,
+  PAM_ERROR_MSG: 3,
+  PAM_TEXT_INFO: 4
+};
 const NODE_PAM_JS_CONV = 50;
 const cookieName = 'SID=';
 
@@ -61,7 +67,7 @@ wss.on('connection', (ws) => {
 
     if (message.match(/sid:.+/)) {
 
-      var sid = message.substring(8);
+      var sid = message.substring(4);
 
       fs.readFile(sessionFile, (err, data) => {
 
@@ -73,9 +79,9 @@ wss.on('connection', (ws) => {
 
           for ( let line of lines ) {
 
-            if (line.includes(sid)) {
+            if (line.startsWith(sid + "::")) {
               var cred = (line.split('::'));
-              ws.send(JSON.stringify({'user': cred[0]}));
+              ws.send(JSON.stringify({'user': cred[1]}));
               break;             
             }
           }
@@ -85,7 +91,7 @@ wss.on('connection', (ws) => {
       });
     } else if (message.match(/logout:.+/)) {
 
-      var sid = message.substring(11);
+      var sid = message.substring(7);
 
       fs.readFile(sessionFile, (err, data) => {
 
@@ -95,7 +101,7 @@ wss.on('connection', (ws) => {
     
         for ( let line of lines ) {
     
-          if (line.includes(sid)) {
+          if (line.startsWith(sid + "::")) {
 
             var idx = lines.indexOf(line);
             lines.splice(idx, 1);
@@ -113,8 +119,9 @@ wss.on('connection', (ws) => {
         pam.authenticate(service, message, data => {
               
           if (data.retval === NODE_PAM_JS_CONV) {
-            ws.send(JSON.stringify({'msg': data.msg, 'msgStyle': data.msgStyle}));
+              ws.send(JSON.stringify({'msg': data.msg, 'msgStyle': data.msgStyle}));
               ctx = data;
+              if (data.msgStyle === msgStyle.PAM_ERROR_MSG || data.msgStyle === msgStyle.PAM_TEXT_INFO) pam.registerResponse(ctx, '');
           } else if (data.retval === PAM_SUCCESS) {
               var cookie = generateCookie(cookieName, data.user);
               ws.send(JSON.stringify({'msg': data.retval, 'cookie': cookie}));
@@ -146,35 +153,33 @@ function generateCookie(cookieName, user) {
 
   var cookie = cookieName + sid + '; Expires=' + expiresDate;
 
-  fs.appendFile(sessionFile, user + '::' + sid + '\n', err => {
+  fs.appendFile(sessionFile, sid + '::' + user + '\n', err => {
     if (err) throw err;
   });
 
-  startTimer(user, 86400000);
+  startTimer(sid, 86400000);
 
   return cookie;
 };
 
-function startTimer(user, expiresDate) {
+function startTimer(sid, expiresDate) {
 
   setTimeout( () => {
     fs.readFile(sessionFile, (err, data) => {
+
       if (err) throw err;
   
       var lines = data.toString().split('\n');
   
       for ( let line of lines ) {
   
-        if (line.includes(user)) {
-          let arr = (line.split('::'));
-          if (arr[0] === user) {
-            var idx = lines.indexOf(line);
-            lines.splice(idx, 1);
-            fs.writeFile(sessionFile, lines, (err) => {
-              if (err) throw err;
-            });
-            break;
-          }             
+        if (line.startsWith(sid)) {
+           var idx = lines.indexOf(line);
+           lines.splice(idx, 1);
+           fs.writeFile(sessionFile, lines, (err) => {
+             if (err) throw err;
+           });
+           break;             
         }
       }    
     });
