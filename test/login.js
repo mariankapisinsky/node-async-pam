@@ -24,7 +24,6 @@ ws.onmessage = function(e) {
 		ws.close();
 		$("#promptForm").hide();
 		$("#status").text('Authenticated');
-		//sendAuthInfo(user, message.cookie);
 		document.cookie = message.cookie;
 		window.location.href = '/app';
 	} else if (typeof message.msg === 'string') {
@@ -90,18 +89,6 @@ function sendUserInput() {
 		ws.send(userInput);
 	}
 };
-
-/*function sendAuthInfo(user, cookie) {
-
-	$.ajax({
-		type: 'POST',
-		url: window.location,
-		data: { user: user, cookie: cookie },
-		success: function() {
-			window.location.href = '/app';		
-		}
-	});
-};*/
 
 $( document ).ready(function() {
 
