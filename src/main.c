@@ -149,6 +149,8 @@ static napi_value Terminate(napi_env env, napi_callback_info info) {
 
   nodepamTerminate(ctx);
 
+  assert(napi_release_threadsafe_function(ctx->tsfn, napi_tsfn_release) == napi_ok);
+
   return NULL;
 }
 

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <pthread.h>
 
 #include <node_api.h>
@@ -13,6 +14,7 @@ typedef struct {
   char *message;
   int msgStyle;
   char *response;
+  bool respFlag;
   int retval;
   pthread_t thread;
   pthread_mutex_t mutex;
@@ -21,7 +23,7 @@ typedef struct {
 
 void nodepamAuthenticate(nodepamCtx *ctx);
 
-void nodepamSetResponse(nodepamCtx *ctx, char *response, size_t responseSize);
+void nodepamSetResponse(nodepamCtx *ctx, const char *response, size_t responseSize);
 
 void nodepamCleanup(nodepamCtx *ctx);
 

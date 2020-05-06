@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
 #include <assert.h>
@@ -17,9 +19,10 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
 
   ctx->message = memset(malloc((strlen(msg))), 0, (strlen(msg)));
   ctx->message = strdup(msg);
-       
-  ctx->retval = NODE_PAM_JS_CONV;
+
   ctx->response = NULL;
+  ctx->respFlag = false;
+  ctx->retval = NODE_PAM_JS_CONV;
 }
 
 void sendMessage(nodepamCtx *ctx) {
@@ -54,31 +57,43 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         while(true) {
 
           pthread_mutex_lock(&(ctx->mutex));
-          if(ctx->response == NULL ) {
+          if (!ctx->respFlag) {
             pthread_mutex_unlock(&(ctx->mutex));
             continue;
           } 
           else {
+            response[i].resp = strdup(ctx->response);
+            response[i].resp_retcode = 0;
             pthread_mutex_unlock(&(ctx->mutex));
             break;
           }
-        }
-
-        response[i].resp = strdup(ctx->response);
-        response[i].resp_retcode = 0;
-
-        free(ctx->message);
+        }	
+	free(ctx->message);
         free(ctx->response);
         break;
       case PAM_ERROR_MSG:
       case PAM_TEXT_INFO:
         
+	// Pass the message into JavaScript
         prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
-
+	
         // Pass the message into JavaScript
-        assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
+        sendMessage(ctx);
 
-        free(ctx->message);
+	while(true) {
+
+	  pthread_mutex_lock(&(ctx->mutex));
+	  if (!ctx->respFlag) {
+            pthread_mutex_unlock(&(ctx->mutex));
+            continue;
+          }
+	  else {
+            pthread_mutex_unlock(&(ctx->mutex));
+	    break;
+	  }	
+	}
+
+	free(ctx->message);
         break;
       default:
         return PAM_CONV_ERR;
@@ -107,9 +122,10 @@ void nodepamAuthenticate(nodepamCtx *ctx) {
   ctx->retval = retval;
 }
 
-void nodepamSetResponse(nodepamCtx *ctx, char *response, size_t responseSize) {
+void nodepamSetResponse(nodepamCtx *ctx, const char *response, size_t responseSize) {
 
   pthread_mutex_lock(&(ctx->mutex));
+
   ctx->response = memset(malloc(responseSize), 0, responseSize);
 
   if (!ctx->response) {
@@ -118,7 +134,10 @@ void nodepamSetResponse(nodepamCtx *ctx, char *response, size_t responseSize) {
     return;
   }
 
-  strcpy(ctx->response, response);
+  if (ctx->msgStyle == PAM_PROMPT_ECHO_OFF || ctx->msgStyle == PAM_PROMPT_ECHO_ON ) 
+  	ctx->response = strdup(response);
+
+  ctx->respFlag = true;
   pthread_mutex_unlock(&(ctx->mutex));
 }
 
@@ -143,5 +162,4 @@ void nodepamCleanup(nodepamCtx *ctx) {
 void nodepamTerminate(nodepamCtx *ctx) {
 
   ctx->retval = NODE_PAM_ERR;
-  assert(napi_release_threadsafe_function(ctx->tsfn, napi_tsfn_release) == napi_ok);
 }
