@@ -58,10 +58,10 @@ sub login {
 	my $login = $q->param('user');
 	my $jscookie = $q->param('cookie');
 
-	if (defined $login and defined $jscookie) {
-		print "Set-Cookie: $jscookie; path=$ENV{SCRIPT_NAME}\n";	
-		return;	
-	}
+	#if (defined $login and defined $jscookie) {
+	#	print "Set-Cookie: $jscookie; path=$ENV{SCRIPT_NAME}\n";	
+	#	return;	
+	#}
 
 	no warnings 'uninitialized';
 	$body = <<"EOS";
