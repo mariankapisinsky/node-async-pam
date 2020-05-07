@@ -24,12 +24,22 @@ my $LOGIN = '/login';
 my $LOGOUT = '/logout';
 my $AUTH_COOKIE = 'SID';
 
+my $sessionsFile = "/opt/node-auth-pam/sessions/webapp";
+
 my $q = new CGI;
 my $cookie = $q->cookie($AUTH_COOKIE);
 my $user;
  
 if ($cookie) { 
-	$user = $q->param('user');
+	open(FD, '<', $sessionsFile);
+	while (<FD>) {
+		if (rindex($_, $cookie, 0) == 0) {
+			my @cred = split('::', $_);
+			$user = $cred[1];
+			last;
+		}	
+	}
+	close(FD);
 }
 
 my @nav;
@@ -38,7 +48,7 @@ print "Content-Type: text/html; charset=UTF-8\n";
 print "Pragma: no-cache\n";
 
 my $title = "Application";
-my $script = '<script src="../session.js"></script>';
+my $script = '';
 my $body = "<p>This is a test application; public view, not much to see.<p>";
 if (defined $user) {
 	$title .= " authenticated ($user)";
@@ -47,21 +57,21 @@ if (defined $user) {
 }
 
 sub logout {
-	$script = '<script src="../logout.js"></script>';
+	print "Set-Cookie: $AUTH_COOKIE=; Expires=Thu, 01 Jan 1970 00:00:01 GMT; path=$ENV{SCRIPT_NAME}\n";
+	print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
 	$title = "Logged out";
 	$body = '<p>Successfully logged out. You will be redirected to the '
 		. qq!<a href="$ENV{SCRIPT_NAME}">home page</a></p>!;
 }
 sub login {
+	if (defined $user) {
+		print "Refresh: 3; URL=$ENV{SCRIPT_NAME}\n";
+		$title = "Already logged in";
+		$body = "You are already logged in as user $user.\n";
+		return;
+	}
 	$script = '<script src="../login.js"></script>';
 	$title = "Log in to application";
-	my $login = $q->param('user');
-	my $jscookie = $q->param('cookie');
-
-	#if (defined $login and defined $jscookie) {
-	#	print "Set-Cookie: $jscookie; path=$ENV{SCRIPT_NAME}\n";	
-	#	return;	
-	#}
 
 	no warnings 'uninitialized';
 	$body = <<"EOS";

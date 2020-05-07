@@ -90,13 +90,4 @@ function sendUserInput() {
 	}
 };
 
-$( document ).ready(function() {
-
-	if ( document.cookie ) {
-		$("#promptForm").hide();
-		$("#status").text('Already authenticated');
-		window.location.href = '/app';
-	}
-});
-
 
