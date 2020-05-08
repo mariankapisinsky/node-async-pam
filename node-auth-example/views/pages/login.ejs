@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <%- include('../partials/head') %>
+        <%- include('../partials/auth') %>
+    </head>
+    <body>
+        <h1>Log In</h1>
+        <form hidden id="promptForm" onsubmit="sendUserInput(); return false;">
+            <label id="promptLabel" for="prompt"></label>
+            <input id="prompt" type="text" />
+            <button type="button" onclick="sendUserInput();">Next</button>
+        </form>
+
+        <h2 id="status"></h2>
+
+        <div id="messages">
+        </div>
+
+        <hr>
+	<a href="<%= link %>"><%= linkText %></a>
+    </body>
+</html>

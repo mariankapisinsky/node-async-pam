@@ -127,7 +127,7 @@ function startTimer(sid, expiresDate) {
         if (line.startsWith(sid)) {
            var idx = lines.indexOf(line);
            lines.splice(idx, 1);
-           fs.writeFile(sessionFile, lines, (err) => {
+           fs.writeFile(sessionFile, lines.join('\n'), (err) => {
              if (err) throw err;
            });
            break;             
