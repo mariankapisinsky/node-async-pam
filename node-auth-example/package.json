@@ -1,6 +1,6 @@
 {
   "name": "node-auth-example",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Example Application for node-auth-pam",
   "main": "server.js",
   "scripts": {
