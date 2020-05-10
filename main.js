@@ -105,7 +105,7 @@ fs.stat(sessionsFile, function(err, stats) {
   if (!stats) {
     fs.writeFile(sessionsFile, '', (err) => {
       if (err) throw err;
-    })
+    });
   }
 });
 
@@ -271,9 +271,9 @@ process.on('SIGINT', () => {
 
   console.log('Stopping the server...');
 
-  fs.unlink(sessionsFile, (err) => {
+  fs.writeFile(sessionsFile, '', (err) => {
     if (err) throw err;
-  })
+  });
   
   pam.cleanUp();
 
