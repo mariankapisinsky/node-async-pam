@@ -1,3 +1,9 @@
+/*!
+ * node-auth-pam - auth-pam.c
+ * Copyright(c) 2020 Marian Kapisinsky
+ * MIT Licensed
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +32,7 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
 }
 
 void sendMessage(nodepamCtx *ctx) {
+
   assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 }
 
@@ -53,7 +60,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         // Pass the message into JavaScript
         sendMessage(ctx);
 
-        //Wait for the response - najst lepsiu alternativu
+        // Wait for the response
         while(true) {
 
           pthread_mutex_lock(&(ctx->mutex));
@@ -68,33 +75,35 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
             break;
           }
         }	
-	free(ctx->message);
+
+	      free(ctx->message);
         free(ctx->response);
         break;
+
       case PAM_ERROR_MSG:
       case PAM_TEXT_INFO:
         
-	// Pass the message into JavaScript
         prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
 	
         // Pass the message into JavaScript
         sendMessage(ctx);
 
-	while(true) {
+        while(true) {
 
-	  pthread_mutex_lock(&(ctx->mutex));
-	  if (!ctx->respFlag) {
-            pthread_mutex_unlock(&(ctx->mutex));
-            continue;
-          }
-	  else {
-            pthread_mutex_unlock(&(ctx->mutex));
-	    break;
-	  }	
-	}
+          pthread_mutex_lock(&(ctx->mutex));
+          if (!ctx->respFlag) {
+                  pthread_mutex_unlock(&(ctx->mutex));
+                  continue;
+                }
+          else {
+                  pthread_mutex_unlock(&(ctx->mutex));
+            break;
+          }	
+        }
 
-	free(ctx->message);
+	      free(ctx->message);
         break;
+        
       default:
         return PAM_CONV_ERR;
     }

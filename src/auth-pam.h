@@ -1,3 +1,9 @@
+/*!
+ * node-auth-pam - auth-pam.h
+ * Copyright(c) 2020 Marian Kapisinsky
+ * MIT Licensed
+ */
+
 #include <stdbool.h>
 #include <pthread.h>
 

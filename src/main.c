@@ -1,3 +1,9 @@
+/*!
+ * node-auth-pam - main.c
+ * Copyright(c) 2020 Marian Kapisinsky
+ * MIT Licensed
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
