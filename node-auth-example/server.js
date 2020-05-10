@@ -80,7 +80,7 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req, res) => {
 
-	var user;
+    var user;
 
     if (req.cookies[cookieName]) {
 		const sid = req.cookies[cookieName];
@@ -139,7 +139,7 @@ function getUser(sid) {
 	
 	var user;
 
-	data = fs.readFileSync(sessionsFile);
+	const data = fs.readFileSync(sessionsFile);
 
         if (data.toString().includes(sid)) {
 
