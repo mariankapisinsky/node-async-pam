@@ -105,9 +105,10 @@ app.get('/login', (req, res) => {
 app.get('/logout', (req, res) => {
 
     var user;
+    var sid;
 
     if (req.cookies[cookieName]) {
-		const sid = req.cookies[cookieName];
+		sid = req.cookies[cookieName];
 		user = getUser(sid);
     }
 
