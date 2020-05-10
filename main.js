@@ -262,7 +262,7 @@ function startTimer(sid, expiresDate) {
 
 /**
  * On interupt (ctrl+c),
- * delete the sessions file
+ * clears the sessions file
  * and call the cleanUp() function
  * to prevent some memory leaks
  */
