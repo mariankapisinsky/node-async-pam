@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+	<script type="text/javascript" src="login.js"></script>
+	<title>Log In</title>
+    </head>
+    <body>
+        <h1>Log In</h1>
+
+        <form hidden id="promptForm" onsubmit="sendUserInput(); return false;">
+            <label id="promptLabel" for="prompt"></label>
+            <input id="prompt" type="text" />
+            <button type="button" onclick="sendUserInput();">Next</button>
+        </form>
+
+        <h2 id="status"></h2>
+
+        <div id="messages">
+        </div>
+
+        <hr>
+    </body>
+</html>
