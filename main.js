@@ -1,10 +1,29 @@
+/*!
+ * node-auth-pam
+ * Copyright(c) 2020 Marian Kapisinsky
+ * MIT Licensed
+ */
+
 'use strict';
+
+/**
+ * Module dependencies.
+ */
 
 const yargs = require('yargs');
 const fs = require('fs');
 const crypto = require('crypto');
 const WebSocketServer = require('ws').Server;
+
+/**
+ * Binding for node-auth-pam addon
+ */
+
 const pam = require('bindings')('auth_pam');
+
+/**
+ * PAM related defines
+ */
 
 const PAM_SUCCESS = 0;
 const msgStyle = {
@@ -13,8 +32,19 @@ const msgStyle = {
   PAM_ERROR_MSG: 3,
   PAM_TEXT_INFO: 4
 };
+
+/**
+ * node-auth-pam define - conversation in progress
+ * 
+ * Name of the cookie that carries the session ID.
+ */
+
 const NODE_PAM_JS_CONV = 50;
-const cookieName = 'SID=';
+const cookieName = 'SID';
+
+/**
+ * Command line arguments parsing
+ */
 
 const argv = yargs
   .usage('Usage: node $0 -p <port> -s <service>')
@@ -31,11 +61,30 @@ const argv = yargs
   .alias('h', 'help')
   .argv;
 
+/**
+ * Port number for the WebSocket server (default: 1234)
+ * 
+ * Name of the service as configured
+ * in /etc/pam.d/ (default: login)
+ */
+
 var port = argv.port;
 var service = argv.service;
 
+/**
+ * Path to the sessions/ directory
+ * 
+ * Path to the file that stores session information
+ * named after the service as configured in /etc/pam.d/
+ */
+
 const dirPath = './sessions';
-const sessionFile = './sessions/' + service;
+const sessionsFile = './sessions/' + service;
+
+/**
+ * On startup, create the sessions/ directory
+ * if does not exist
+ */
 
 fs.stat(dirPath, function(err, stats) {
 
@@ -46,49 +95,103 @@ fs.stat(dirPath, function(err, stats) {
   }
 });
 
-fs.stat(sessionFile, function(err, stats) {
+/**
+ * On startup, create the file for storing session information
+ * if does not exist
+ */
+
+fs.stat(sessionsFile, function(err, stats) {
 
   if (!stats) {
-    fs.writeFile(sessionFile, '', (err) => {
+    fs.writeFile(sessionsFile, '', (err) => {
       if (err) throw err;
     })
   }
 });
 
+/**
+ * Start the WebSocket server
+ */
+
 const wss = new WebSocketServer({ port: port });
 
-console.log('Runnning on port ' + port + '...');
+console.log('Running on port ' + port + '...');
+
+/**
+ * On client's connection event
+ */
 
 wss.on('connection', (ws) => {
 
+  // variable to store nodepamCtx
   var ctx;
 
+  /** 
+   * On client's message event
+   * 
+   * The first (initial) message is the username,
+   * every other message is the user's response
+   * for the current prompt
+  */ 
   ws.on('message', (message) => {
 
+    // If it is the client's inital message (does not have a nodepamCtx yet),
+    // begin a PAM transaction, else
     if (!ctx) {
-
-      pam.authenticate(service, message, data => {
+      
+      /**
+       * The authenticate(service name, username, callback) function creates
+       * new nodepamCtx and authentication thread
+       * (each connection has exactly one nodepamCtx and authentication thread).
+       * 
+       * The callback function is called from the PAM conversation function
+       * (one or multiple times) and finally after the transaction is finished.
+       * It passes the nodepamCtx from the addon to Node.js.
+       * 
+       * When the retval in the nodepamCtx is set to NODE_PAM_JS_CONV,
+       * a conversation is in progress and waits for response.
+       * The server sends the message and the message style to the client.
+       * In case of PAM_ERROR_MSG or PAM_TEXT_INFO message styles it has to call
+       * the registerResponse(nodepamCtx, response) with an empty string
+       * due to synchronization issues.
+       * 
+       * When the retval in the nodepamCtx is set to PAM_SUCCESS,
+       * the authentication was successful and the server generates a cookie,
+       * stores it to the sessions file and sends it to a user along with the retval.
+       * 
+       * Any other case is an error case and the server sends the retval to the client
+       * and deletes the stored context.
+       */
+      pam.authenticate(service, message, (nodepamCtx) => {
               
-        if (data.retval === NODE_PAM_JS_CONV) {
-            ws.send(JSON.stringify({'msg': data.msg, 'msgStyle': data.msgStyle}));
-            ctx = data;
-            if (data.msgStyle === msgStyle.PAM_ERROR_MSG || data.msgStyle === msgStyle.PAM_TEXT_INFO) pam.registerResponse(ctx, '');
-        } else if (data.retval === PAM_SUCCESS) {
-            var cookie = generateCookie(cookieName, data.user);
-            ws.send(JSON.stringify({'msg': data.retval, 'cookie': cookie}));
+        if (nodepamCtx.retval === NODE_PAM_JS_CONV) {
+            ws.send(JSON.stringify({'msg': nodepamCtx.msg, 'msgStyle': nodepamCtx.msgStyle}));
+            ctx = nodepamCtx;
+            if (nodepamCtx.msgStyle === msgStyle.PAM_ERROR_MSG || nodepamCtx.msgStyle === msgStyle.PAM_TEXT_INFO)
+              pam.registerResponse(ctx, '');
+        } else if (nodepamCtx.retval === PAM_SUCCESS) {
+            var cookie = generateCookie(cookieName, nodepamCtx.user);
+            ws.send(JSON.stringify({'msg': nodepamCtx.retval, 'cookie': cookie}));
             ctx = undefined;
         } else {
-            ws.send(JSON.stringify({'msg': data.retval}));
+            ws.send(JSON.stringify({'msg': nodepamCtx.retval}));
             ctx = undefined;
         }
       });
-    } else {
 
+    } else {
+      
+      // The registerResponse(nodepamCtx, response) function passes the user's response
+      // to the waiting conversation function
       pam.registerResponse(ctx, message);
     }  
   });
 
-  ws.on('close', function() {
+  /** When the connection closes, the terminate(nodepamCtx) function kills
+   * the authnetication thread and deletes the nodepamCtx
+   * if the transaction was in progress
+   */ 
+  ws.on('close', () => {
 
     if (ctx)
       pam.terminate(ctx);    
@@ -96,15 +199,26 @@ wss.on('connection', (ws) => {
 
 });
 
-function generateCookie(cookieName, user) {
+/**
+ * Generates a session ID (base64 encoded random 16 byte string),
+ * generates an expiration date (now + 1d), creates a SID cookie 
+ * with the expiration date, stores the session ID 
+ * to the sessions file in "sid::username" format
+ * and starts the one-day timeout.
+ * Returns the cookie.
+ * @param {string} cookieName 
+ * @param {string} user 
+ */
 
-  var expiresDate = new Date(new Date().getTime() + 86400000).toUTCString();
+function generateCookie(cookieName, user) {
 
   var sid = crypto.randomBytes(16).toString('base64');
 
-  var cookie = cookieName + sid + '; Expires=' + expiresDate;
+  var expiresDate = new Date(new Date().getTime() + 86400000).toUTCString();
 
-  fs.appendFile(sessionFile, sid + '::' + user + '\n', err => {
+  var cookie = cookieName + '=' + sid + '; Expires=' + expiresDate;
+
+  fs.appendFile(sessionsFile, sid + '::' + user + '\n', err => {
     if (err) throw err;
   });
 
@@ -113,10 +227,19 @@ function generateCookie(cookieName, user) {
   return cookie;
 };
 
+/**
+ * Starts the one-day timeout after which
+ * it deletes the corresponding line
+ * with given session ID from 
+ * the file with session information
+ * @param {string} sid 
+ * @param {number} expiresDate 
+ */
+
 function startTimer(sid, expiresDate) {
 
   setTimeout( () => {
-    fs.readFile(sessionFile, (err, data) => {
+    fs.readFile(sessionsFile, (err, data) => {
 
       if (err) throw err;
   
@@ -127,7 +250,7 @@ function startTimer(sid, expiresDate) {
         if (line.startsWith(sid)) {
            var idx = lines.indexOf(line);
            lines.splice(idx, 1);
-           fs.writeFile(sessionFile, lines.join('\n'), (err) => {
+           fs.writeFile(sessionsFile, lines.join('\n'), (err) => {
              if (err) throw err;
            });
            break;             
@@ -137,11 +260,18 @@ function startTimer(sid, expiresDate) {
   }, expiresDate);
 };
 
+/**
+ * On interupt (ctrl+c),
+ * delete the sessions file
+ * and call the cleanUp() function
+ * to prevent some memory leaks
+ */
+
 process.on('SIGINT', () => {
 
   console.log('Stopping the server...');
 
-  fs.unlink(sessionFile, (err) => {
+  fs.unlink(sessionsFile, (err) => {
     if (err) throw err;
   })
   
