@@ -2,7 +2,7 @@
 
 The login.html file contains the necessary HTML code for a login page.
 Edit it to needs and taste, but do *not* delete included scripts, the form,
-and the #status and #messages elements.
+and #status and #messages elements.
 
 The login.js file contain the client-side JavaScript code for the login page.
 Only edit window.location.href path and the WebSocket server address.
