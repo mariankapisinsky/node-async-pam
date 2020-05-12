@@ -38,7 +38,7 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
 
 /**
  * Call the N-API thread-safe function to pass the message to Node.js
- * (this calls the authenticate() function's callback).
+ * (this calls the authenticate() bindings's callback).
  */
 
 void sendMessage(nodepamCtx *ctx) {
