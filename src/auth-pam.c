@@ -1,4 +1,4 @@
-/*!
+/**
  * node-auth-pam - auth-pam.c
  * Copyright(c) 2020 Marian Kapisinsky
  * MIT Licensed
@@ -19,6 +19,11 @@
 
 #include "auth-pam.h"
 
+/**
+ * Prepare the current PAM message to nodepamCtx,
+ * set response to NULL, respFlag to false and retval to NODE_PAM_JS_CONV.
+*/
+
 void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
 
   ctx->msgStyle = msg_style;
@@ -31,10 +36,19 @@ void prepareMessage(nodepamCtx *ctx, int msg_style, const char *msg) {
   ctx->retval = NODE_PAM_JS_CONV;
 }
 
+/**
+ * Call the N-API thread-safe function to pass the message to Node.js
+ * (this calls the authenticate() function's callback).
+ */
+
 void sendMessage(nodepamCtx *ctx) {
 
   assert(napi_call_threadsafe_function(ctx->tsfn, ctx, napi_tsfn_blocking) == napi_ok);
 }
+
+/**
+ * Addon's conversation function.
+*/
 
 int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_response **resp, void *appdata_ptr ) {
 
@@ -57,10 +71,10 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
 
         prepareMessage(ctx, msg[i]->msg_style, msg[i]->msg);
 
-        // Pass the message into JavaScript
+        // Pass the message to Node.js
         sendMessage(ctx);
 
-        // Wait for the response
+        // Wait for response
         while(true) {
 
           pthread_mutex_lock(&(ctx->mutex));
@@ -76,7 +90,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
           }
         }	
 
-	      free(ctx->message);
+        free(ctx->message);
         free(ctx->response);
         break;
 
@@ -88,6 +102,7 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
         // Pass the message into JavaScript
         sendMessage(ctx);
 
+        // Wait for response - just for synchronization purposes, no response is set
         while(true) {
 
           pthread_mutex_lock(&(ctx->mutex));
@@ -113,7 +128,6 @@ int nodepamConv( int num_msg, const struct pam_message **msg, struct pam_respons
   return PAM_SUCCESS;
 }
 
-//The authentication thread
 void nodepamAuthenticate(nodepamCtx *ctx) {
 
   pam_handle_t *pamh = NULL;

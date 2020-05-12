@@ -2,10 +2,10 @@
 PAM Authentication for Node.js
 
 Contents:
-  - integration/ - contains necessary files for easy integration to a web application
+  - integration/ - contains necessary files for a simple integration to a web application
   - node-auth-example/ - contains an example web application for node-auth-pam
   - pam_reversed_login/ - contains an example PAM module for demonstration/testing purposes
-  - src/ - contains node-auth-pam addon source codes
+  - src/ - contains node-auth-pam addon source files
   - main.js - the WebSocket server for PAM authentication using node-auth-pam
 
 Dependencies:
@@ -20,6 +20,3 @@ Run:
   - port - the WebSocket server port (default: 1234)
   - service - the service name as defined in /etc/pam.d/ (default: login)
 
-
-TO DO:
-  - replace while() if possible

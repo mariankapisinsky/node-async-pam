@@ -1,6 +1,30 @@
+/*
+    Authors:
+        Marian Kapisinsky
+
+    Copyright (c) 2020 Marian Kapinsky
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * Module defines.
+ */
 
 #define PAM_SM_AUTH
 #include <security/pam_modules.h>
@@ -8,7 +32,11 @@
 #define AUTH_SUCCESS 0
 #define AUTH_FAIL 1
 
-int do_pam_conv(pam_handle_t *pamh, int num_msg, const struct pam_message **msg, struct pam_response **resp) {
+/**
+ * Converse with the calling PAM application.
+*/
+
+int doPamConv(pam_handle_t *pamh, int num_msg, const struct pam_message **msg, struct pam_response **resp) {
 
     struct pam_conv *conv;
 
@@ -18,6 +46,10 @@ int do_pam_conv(pam_handle_t *pamh, int num_msg, const struct pam_message **msg,
 
     return conv->conv(num_msg, msg, resp, conv->appdata_ptr);
 }
+
+/**
+ * Validate the user's response.
+*/
 
 int authenticate( const char *login, const char *reversed_login ) {
 
@@ -31,6 +63,10 @@ int authenticate( const char *login, const char *reversed_login ) {
 
     return AUTH_SUCCESS;
 }
+
+/**
+ * Set messages to the pam_message structure.
+*/
 
 void setMessages(struct pam_message *msg) {
 
@@ -46,6 +82,10 @@ void setMessages(struct pam_message *msg) {
     msg[3].msg_style = PAM_TEXT_INFO;
     msg[3].msg = "This is a text info test";
 }
+
+/**
+ * Module's implementation of the pam_authenticate() interface.
+*/
 
 PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
 
@@ -68,7 +108,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     msgp[2] = &msg[2];
     msgp[3] = &msg[3];
 
-    int retval = do_pam_conv(pamh, 4, msgp, &resp);
+    int retval = doPamConv(pamh, 4, msgp, &resp);
 
     int status;
     for ( int i = 0; i < 2; i++ ) {
@@ -93,6 +133,10 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags, int argc, con
     free(msgp);
     return PAM_SUCCESS;
 }
+
+/**
+ * Module's implementation of the pam_setcred() interface. Unused - always returns PAM_SUCCES.
+*/
 
 PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) {
 	return PAM_SUCCESS;

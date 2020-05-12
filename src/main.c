@@ -1,8 +1,13 @@
-/*!
+/**
  * node-auth-pam - main.c
  * Copyright(c) 2020 Marian Kapisinsky
  * MIT Licensed
  */
+
+/**
+ * The code in this file is based on the round_trip.c example made by one of Node.js's developers Gabriel Schulhof.
+ * https://github.com/gabrielschulhof/abi-stable-node-addon-examples/blob/tsfn_round_trip/thread_safe_function_round_trip/node-api/round_trip.c
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +41,12 @@ static void CallJs(napi_env env, napi_value jsCallback, void* context, void* dat
   }
 }
 
+/**
+ * When the N-API thread-safe function is released, it means the authentication thread
+ * has ended. This function is the thread-safe function's finalize callback and it is
+ * an easy way how to clean the thread's resources (nodepamCtx).
+*/
+
 static void ThreadFinished(napi_env env, void* data, void* context) {
 
   (void) context;
@@ -44,6 +55,10 @@ static void ThreadFinished(napi_env env, void* data, void* context) {
 
   nodepamCleanup(ctx);
 }
+
+/**
+ * The authentication thead.
+*/
 
 static void *AuthThread(void* data) {
 
@@ -57,6 +72,10 @@ static void *AuthThread(void* data) {
 
   return (NULL);
 };
+
+/**
+ * The binding called from Node.js to start the authentication thread.
+*/
 
 static napi_value Authenticate(napi_env env, napi_callback_info info) {
 
@@ -112,7 +131,11 @@ static bool isnodepamCtx(napi_env env, napi_ref constructor_ref, napi_value valu
   return validate;
 }
 
-static napi_value RegisterResponse(napi_env env, napi_callback_info info) {
+/**
+ * The binding called from Node.js to set the user's response.
+*/
+
+static napi_value SetResponse(napi_env env, napi_callback_info info) {
 
   size_t argc = 2;
   napi_value argv[2];
@@ -139,6 +162,10 @@ static napi_value RegisterResponse(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+/**
+ * The binding called from Node.js to terminate the authentication thread on error.
+*/
+
 static napi_value Terminate(napi_env env, napi_callback_info info) {
 
   size_t argc = 1;
@@ -160,6 +187,11 @@ static napi_value Terminate(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
+/**
+ * The binding called from Node.js when the addon is about to be unloaded.
+ * Prevent some memory leaks.
+*/
+
 static napi_value CleanUp(napi_env env, napi_callback_info info) {
 
   assert(napi_delete_reference(env, nodepamCtxConstructor) == napi_ok);
@@ -170,6 +202,10 @@ static napi_value CleanUp(napi_env env, napi_callback_info info) {
 static napi_value AuthDataConstructor(napi_env env, napi_callback_info info) {
   return NULL;
 }
+
+/**
+ * The getter for username.
+*/
 
 static napi_value GetUser(napi_env env, napi_callback_info info) {
 
@@ -185,6 +221,10 @@ static napi_value GetUser(napi_env env, napi_callback_info info) {
   return property;
 }
 
+/**
+ * The getter for message.
+*/
+
 static napi_value GetMsg(napi_env env, napi_callback_info info) {
 
   napi_value jsthis, property;
@@ -198,6 +238,10 @@ static napi_value GetMsg(napi_env env, napi_callback_info info) {
 
   return property;
 }
+
+/**
+ * The getter for message style.
+*/
 
 static napi_value GetMsgStyle(napi_env env, napi_callback_info info) {
 
@@ -213,6 +257,10 @@ static napi_value GetMsgStyle(napi_env env, napi_callback_info info) {
   return property;
 }
 
+/**
+ * The getter for retval.
+*/
+
 static napi_value GetRetval(napi_env env, napi_callback_info info) {
 
   napi_value jsthis, property;
@@ -226,6 +274,10 @@ static napi_value GetRetval(napi_env env, napi_callback_info info) {
 
   return property;
 }
+
+/**
+ * Module's initialization.
+*/
 
 NAPI_MODULE_INIT() {
 
@@ -243,7 +295,7 @@ NAPI_MODULE_INIT() {
 
   napi_property_descriptor export_properties[] = {
     { "authenticate", NULL, Authenticate, NULL, NULL, NULL, napi_default, 0 },
-    { "registerResponse", NULL, RegisterResponse, NULL, NULL, NULL, napi_default, 0 },
+    { "setResponse", NULL, SetResponse, NULL, NULL, NULL, napi_default, 0 },
     { "terminate", NULL, Terminate, NULL, NULL, NULL, napi_default, 0 },
     { "cleanUp", NULL, CleanUp, NULL, NULL, NULL, napi_default, 0 }
   };

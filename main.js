@@ -16,13 +16,13 @@ const crypto = require('crypto');
 const WebSocketServer = require('ws').Server;
 
 /**
- * Binding for node-auth-pam addon
+ * Binding for node-auth-pam addon.
  */
 
 const pam = require('bindings')('auth_pam');
 
 /**
- * PAM related defines
+ * PAM related defines.
  */
 
 const PAM_SUCCESS = 0;
@@ -43,7 +43,7 @@ const NODE_PAM_JS_CONV = 50;
 const cookieName = 'SID';
 
 /**
- * Command line arguments parsing
+ * Command line arguments parsing.
  */
 
 const argv = yargs
@@ -72,7 +72,7 @@ var port = argv.port;
 var service = argv.service;
 
 /**
- * Path to the sessions/ directory
+ * Path to the sessions/ directory.
  * 
  * Path to the file that stores session information
  * named after the service as configured in /etc/pam.d/
@@ -83,7 +83,7 @@ const sessionsFile = './sessions/' + service;
 
 /**
  * On startup, create the sessions/ directory
- * if does not exist
+ * if does not exist.
  */
 
 fs.stat(dirPath, function(err, stats) {
@@ -97,7 +97,7 @@ fs.stat(dirPath, function(err, stats) {
 
 /**
  * On startup, create the file for storing session information
- * if does not exist
+ * if does not exist.
  */
 
 fs.stat(sessionsFile, function(err, stats) {
@@ -110,7 +110,7 @@ fs.stat(sessionsFile, function(err, stats) {
 });
 
 /**
- * Start the WebSocket server
+ * Start the WebSocket server.
  */
 
 const wss = new WebSocketServer({ port: port });
@@ -118,29 +118,30 @@ const wss = new WebSocketServer({ port: port });
 console.log('Running on port ' + port + '...');
 
 /**
- * On client's connection event
+ * On client's connection event.
  */
 
 wss.on('connection', (ws) => {
 
-  // variable to store nodepamCtx
+  // variable to store nodepamCtx.
   var ctx;
 
   /** 
-   * On client's message event
+   * On client's message event.
    * 
    * The first (initial) message is the username,
    * every other message is the user's response
-   * for the current prompt
+   * for the current prompt.
   */ 
   ws.on('message', (message) => {
 
     // If it is the client's inital message (does not have a nodepamCtx yet),
-    // begin a PAM transaction, else
+    // begin a PAM transaction, else look at the message as the user's response
+    // to the current PAM message from the nodepamCtx.
     if (!ctx) {
       
       /**
-       * The authenticate(service name, username, callback) function creates
+       * The authenticate(service name, username, callback) binding creates
        * new nodepamCtx and authentication thread
        * (each connection has exactly one nodepamCtx and authentication thread).
        * 
@@ -151,8 +152,8 @@ wss.on('connection', (ws) => {
        * When the retval in the nodepamCtx is set to NODE_PAM_JS_CONV,
        * a conversation is in progress and waits for response.
        * The server sends the message and the message style to the client.
-       * In case of PAM_ERROR_MSG or PAM_TEXT_INFO message styles it has to call
-       * the registerResponse(nodepamCtx, response) with an empty string
+       * In case of PAM_ERROR_MSG or PAM_TEXT_INFO message styles, it has to call
+       * the setResponse(nodepamCtx, response) binding with an empty string
        * due to synchronization issues.
        * 
        * When the retval in the nodepamCtx is set to PAM_SUCCESS,
@@ -168,7 +169,7 @@ wss.on('connection', (ws) => {
             ws.send(JSON.stringify({'msg': nodepamCtx.msg, 'msgStyle': nodepamCtx.msgStyle}));
             ctx = nodepamCtx;
             if (nodepamCtx.msgStyle === msgStyle.PAM_ERROR_MSG || nodepamCtx.msgStyle === msgStyle.PAM_TEXT_INFO)
-              pam.registerResponse(ctx, '');
+              pam.setResponse(ctx, '');
         } else if (nodepamCtx.retval === PAM_SUCCESS) {
             var cookie = generateCookie(cookieName, nodepamCtx.user);
             ws.send(JSON.stringify({'msg': nodepamCtx.retval, 'cookie': cookie}));
@@ -181,15 +182,15 @@ wss.on('connection', (ws) => {
 
     } else {
       
-      // The registerResponse(nodepamCtx, response) function passes the user's response
-      // to the waiting conversation function
-      pam.registerResponse(ctx, message);
+      // The setResponse(nodepamCtx, response) binding passes the user's response
+      // to the waiting conversation function.
+      pam.setResponse(ctx, message);
     }  
   });
 
-  /** When the connection closes, the terminate(nodepamCtx) function kills
-   * the authnetication thread and deletes the nodepamCtx
-   * if the transaction was in progress
+  /** When the connection closes, the terminate(nodepamCtx) binding kills
+   * the authentication thread and deletes the nodepamCtx
+   * if the transaction was in progress.
    */ 
   ws.on('close', () => {
 
@@ -231,7 +232,8 @@ function generateCookie(cookieName, user) {
  * Starts the one-day timeout after which
  * it deletes the corresponding line
  * with given session ID from 
- * the file with session information
+ * the file with session information.
+ * 
  * @param {string} sid 
  * @param {number} expiresDate 
  */
@@ -263,8 +265,8 @@ function startTimer(sid, expiresDate) {
 /**
  * On interupt (ctrl+c),
  * clears the sessions file
- * and call the cleanUp() function
- * to prevent some memory leaks
+ * and calls the cleanUp() binding
+ * to prevent some memory leaks.
  */
 
 process.on('SIGINT', () => {
