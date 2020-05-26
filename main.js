@@ -188,14 +188,14 @@ wss.on('connection', (ws) => {
     }  
   });
 
-  /** When the connection closes, the terminate(nodepamCtx) binding kills
+  /** When the connection closes, the kill(nodepamCtx) binding kills
    * the authentication thread and deletes the nodepamCtx
    * if the transaction was in progress.
    */ 
   ws.on('close', () => {
 
     if (ctx)
-      pam.terminate(ctx);    
+      pam.kill(ctx);    
   });
 
 });

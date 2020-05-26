@@ -166,7 +166,7 @@ static napi_value SetResponse(napi_env env, napi_callback_info info) {
  * The binding called from Node.js to terminate the authentication thread on error.
 */
 
-static napi_value Terminate(napi_env env, napi_callback_info info) {
+static napi_value Kill(napi_env env, napi_callback_info info) {
 
   size_t argc = 1;
   napi_value argv[1];
@@ -180,7 +180,7 @@ static napi_value Terminate(napi_env env, napi_callback_info info) {
 
   assert(napi_unwrap(env, argv[0], (void**)&ctx) == napi_ok);
 
-  nodepamTerminate(ctx);
+  nodepamKill(ctx);
 
   assert(napi_release_threadsafe_function(ctx->tsfn, napi_tsfn_release) == napi_ok);
 
@@ -199,7 +199,7 @@ static napi_value CleanUp(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
-static napi_value AuthDataConstructor(napi_env env, napi_callback_info info) {
+static napi_value NodePamCtxConstructor(napi_env env, napi_callback_info info) {
   return NULL;
 }
 
@@ -281,26 +281,26 @@ static napi_value GetRetval(napi_env env, napi_callback_info info) {
 
 NAPI_MODULE_INIT() {
 
-  napi_value authDataClass;
+  napi_value nodepamCtxClass;
 
-  napi_property_descriptor thread_item_properties[] = {
+  napi_property_descriptor nodepamCtxProperties[] = {
     { "user", 0, 0, GetUser, 0, 0, napi_writable, 0 },
     { "msg", 0, 0, GetMsg, 0, 0, napi_writable, 0 },
     { "msgStyle", 0, 0, GetMsgStyle, 0, 0, napi_enumerable, 0 },
     { "retval", 0, 0, GetRetval, 0, 0, napi_enumerable, 0 }
   };
 
-  assert(napi_define_class(env, "AuthData",  NAPI_AUTO_LENGTH, AuthDataConstructor, NULL, 4, thread_item_properties, &authDataClass) == napi_ok);
-  assert(napi_create_reference(env, authDataClass, 1, &nodepamCtxConstructor) == napi_ok);
+  assert(napi_define_class(env, "nodepamCtx",  NAPI_AUTO_LENGTH, NodePamCtxConstructor, NULL, 4, nodepamCtxProperties, &nodepamCtxClass) == napi_ok);
+  assert(napi_create_reference(env, nodepamCtxClass, 1, &nodepamCtxConstructor) == napi_ok);
 
-  napi_property_descriptor export_properties[] = {
+  napi_property_descriptor exportProperties[] = {
     { "authenticate", NULL, Authenticate, NULL, NULL, NULL, napi_default, 0 },
     { "setResponse", NULL, SetResponse, NULL, NULL, NULL, napi_default, 0 },
-    { "terminate", NULL, Terminate, NULL, NULL, NULL, napi_default, 0 },
+    { "kill", NULL, Kill, NULL, NULL, NULL, napi_default, 0 },
     { "cleanUp", NULL, CleanUp, NULL, NULL, NULL, napi_default, 0 }
   };
 
-  assert(napi_define_properties(env, exports, sizeof(export_properties) / sizeof(export_properties[0]), export_properties) == napi_ok);
+  assert(napi_define_properties(env, exports, sizeof(exportProperties) / sizeof(exportProperties[0]), exportProperties) == napi_ok);
 
   return exports;
 }

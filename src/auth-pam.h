@@ -64,4 +64,4 @@ void nodepamCleanup(nodepamCtx *ctx);
  * Set the retval in nodepamCtx to NODE_PAM_ERR.
 */
 
-void nodepamTerminate(nodepamCtx *ctx);
+void nodepamKill(nodepamCtx *ctx);

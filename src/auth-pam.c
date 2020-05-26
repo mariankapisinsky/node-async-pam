@@ -182,7 +182,7 @@ void nodepamCleanup(nodepamCtx *ctx) {
   free(ctx);
 }
 
-void nodepamTerminate(nodepamCtx *ctx) {
+void nodepamKill(nodepamCtx *ctx) {
 
   ctx->retval = NODE_PAM_ERR;
 }
