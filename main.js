@@ -178,7 +178,7 @@ wss.on('connection', (ws) => {
             if (nodepamCtx.msgStyle === msgStyle.PAM_ERROR_MSG || nodepamCtx.msgStyle === msgStyle.PAM_TEXT_INFO)
               pam.setResponse(ctx, '');
         } else if (nodepamCtx.retval === PAM_SUCCESS) {
-            var cookie = generateCookie(cookieName, nodepamCtx.user);
+            var cookie = generateCookie(nodepamCtx.user);
             ws.send(JSON.stringify({'msg': nodepamCtx.retval, 'cookie': cookie}));
             ctx = undefined;
         } else {
@@ -214,11 +214,10 @@ wss.on('connection', (ws) => {
  * to the sessions file in "sid::username" format
  * and starts the one-day timeout.
  * Returns the cookie.
- * @param {string} cookieName 
  * @param {string} user 
  */
 
-function generateCookie(cookieName, user) {
+function generateCookie(user) {
 
   var sid = crypto.randomBytes(16).toString('base64');
 
