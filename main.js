@@ -47,28 +47,35 @@ const cookieName = 'SID';
  */
 
 const argv = yargs
-  .usage('Usage: node $0 -p <port> -s <service>')
-  .example('node main.js -p 1234 -s myservice')
-  .alias('p', 'port')
+  .usage('Usage: node $0 -p <path> -s <service> -w <wport>')
+  .example('node main.js -p /app -s myservice -w 1234')
+  .alias('p', 'path')
   .nargs('p', 1)
-  .default('p', '1234')
-  .describe('p', 'Port to run the WebSocket server on')
+  .default('p', '/')
+  .describe('p', 'Path to the application\'s root')
   .alias('s', 'service')
   .nargs('s', 1)
   .default('s', 'login')
   .describe('s', 'Name of the service')
+  .alias('w', 'wport')
+  .nargs('w', 1)
+  .default('w', '1234')
+  .describe('w', 'Port to run the WebSocket server on')
   .help('h')
   .alias('h', 'help')
   .argv;
 
 /**
+ *
+ * Path to the application's root (default: /)
  * Port number for the WebSocket server (default: 1234)
  * 
  * Name of the service as configured
  * in /etc/pam.d/ (default: login)
  */
 
-var port = argv.port;
+var path = argv.path;
+var port = argv.wport;
 var service = argv.service;
 
 /**
@@ -217,7 +224,7 @@ function generateCookie(cookieName, user) {
 
   var expiresDate = new Date(new Date().getTime() + 86400000).toUTCString();
 
-  var cookie = cookieName + '=' + sid + '; Expires=' + expiresDate;
+  var cookie = cookieName + '=' + sid + '; Path=' + path + '; Expires=' + expiresDate;
 
   fs.appendFile(sessionsFile, sid + '::' + user + '\n', err => {
     if (err) throw err;
