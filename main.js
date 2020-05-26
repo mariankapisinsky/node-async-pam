@@ -210,7 +210,7 @@ wss.on('connection', (ws) => {
 /**
  * Generates a session ID (base64 encoded random 16 byte string),
  * generates an expiration date (now + 1d), creates a SID cookie 
- * with the expiration date, stores the session ID 
+ * with the expiration date and the path, stores the session ID 
  * to the sessions file in "sid::username" format
  * and starts the one-day timeout.
  * Returns the cookie.
